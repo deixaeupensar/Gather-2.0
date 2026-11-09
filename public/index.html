@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Voxel Hub</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="importmap">{ "imports": { "three": "/vendor/three/three.module.js", "three/addons/": "/vendor/three-addons/" } }</script>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="crosshair"></div>
+    <div id="mapBox"><div id="info"></div><canvas id="minimap" width="180" height="180"></canvas><div class="mapHint"><kbd>Tab</kbd> mapa</div><div id="roomLabel" class="mapHint hidden"></div></div>
+    <div id="bigmap" class="hidden">
+      <div class="mapPanel">
+        <div class="mapTop"><span>🗺️ Mapa — arraste para mover · rodinha para zoom · duplo clique centraliza</span><span><button id="mapCenter">📍 Centralizar</button> <button id="mapClose"><kbd>Tab</kbd> Fechar</button></span></div>
+        <canvas id="bigmapCanvas" width="900" height="900"></canvas>
+      </div>
+    </div>
+    <div id="players" class="panel"><div class="title">Online</div><div id="playerList"></div></div>
+    <div id="chat"><div id="chatLog"></div><input id="chatInput" class="hidden" maxlength="300" placeholder="Mensagem… (Enter envia, Esc cancela)"></div>
+    <div id="hurt"></div>
+    <div id="roomBtns" class="hidden">
+      <button id="lockBtn" class="roomBtn" title="Trancar/destrancar a sala (L)"><span class="ico">🔓</span><span class="lbl">Trancar sala</span><kbd>L</kbd></button>
+      <button id="ownBtn" class="roomBtn" title="Tomar posse / liberar a sala (K)"><span class="ico">👑</span><span class="lbl">Tomar posse</span><kbd>K</kbd></button>
+      <button id="agendaBtn" class="roomBtn" title="Agenda e reservas da sala (B)"><span class="ico">📅</span><span class="lbl">Agenda da sala</span><kbd>B</kbd></button>
+      <button id="rchatBtn" class="roomBtn" title="Chat da sala (J)"><span class="ico">💬</span><span class="lbl">Chat da sala</span><span class="badge" id="rchatBadge"></span><kbd>J</kbd></button>
+    </div>
+    <div id="hearts" class="hidden"></div>
+    <div id="hotbar"></div>
+    <div id="blockName"></div>
+    <div id="controls">
+      <div id="indStatus" class="ind"><kbd>P</kbd> <span class="sdot"></span> <span>Disponível</span></div>
+      <div id="btnMic" class="ind"><kbd>M</kbd> 🎤 <span>Mic desligado</span></div>
+      <div id="btnNoise" class="ind"><kbd>N</kbd> 🎚️ <span>Ruído: normal</span></div>
+      <div id="btnScreen" class="ind"><kbd>G</kbd> 🖥️ <span>Compartilhar tela</span></div>
+      <div id="btnVoice" class="ind"><kbd>V</kbd> 🔊 <span>Voz: proximidade</span></div>
+      <div id="btnFly" class="ind"><kbd>F</kbd> 🪽 <span>Voo: não</span></div>
+      <div class="ind"><kbd>E</kbd> 🎒 <span>Inventário</span></div>
+      <div class="ind"><kbd>Esc</kbd> ☰ <span>Menu</span></div>
+    </div>
+    <div id="toast"></div>
+  </div>
+
+  <div id="join" class="overlay">
+    <div class="card">
+      <h1>Voxel Hub</h1>
+      <p class="sub">Mundo de blocos do time, com voz e tela compartilhada.</p>
+      <label>Seu nome<input id="name" maxlength="24" autocomplete="nickname" placeholder="Ex.: Daniel"></label>
+      <label>E-mail corporativo<input id="email" type="email" maxlength="80" autocomplete="email" placeholder="voce@hapvida.com.br"></label>
+      <p id="joinErr" class="hint"></p>
+      <label>Cor do avatar</label>
+      <div id="colors"></div>
+      <button id="joinBtn" class="primary">Entrar</button>
+    </div>
+  </div>
+
+  <div id="callCard" class="hidden">
+    <span class="callIco">🔔</span><span id="callText">Alguém está te chamando</span>
+    <button id="callGo" class="primary">➜ Ir até (Y)</button><button id="callNo">Agora não</button>
+  </div>
+
+  <div id="agenda" class="overlay hidden">
+    <div class="card wide agCard">
+      <div class="rchatHead"><div class="rchatTitle"><h2 id="agName">📅 Sala</h2><span id="agStatus" class="hint"></span></div><button id="agClose" title="Fechar (Esc)">✕</button></div>
+      <div class="agDay"><label>Dia <input type="date" id="agDate"></label></div>
+      <div id="agList"></div>
+      <form id="agForm" autocomplete="off">
+        <input id="agTitle" maxlength="60" placeholder="Assunto (ex.: Daily, Refinamento)">
+        <label>Das <input type="time" id="agStart" step="900" required></label>
+        <label>às <input type="time" id="agEnd" step="900" required></label>
+        <button class="primary" type="submit">Reservar</button>
+      </form>
+      <div class="agQuick"><span class="hint">Agora:</span><button type="button" data-now="30">30 min</button><button type="button" data-now="60">1 hora</button><button type="button" data-now="120">2 horas</button></div>
+      <p class="hint">A agenda é só do Voxel Hub. Quem reservou (ou o dono da sala) pode cancelar. A placa em cima da porta mostra se está livre.</p>
+    </div>
+  </div>
+
+  <div id="wbDlg" class="overlay hidden">
+    <div class="card wbCard">
+      <div class="wbBar">
+        <b>✏️ Quadro branco</b>
+        <div id="wbColors"></div>
+        <div class="wbSizes"><button data-size="fino">Fino</button><button data-size="medio">Médio</button><button data-size="grosso">Grosso</button></div>
+        <span class="spacer"></span>
+        <button id="wbUndo" title="Desfazer meu último traço (Ctrl+Z)">↶ Desfazer</button>
+        <button id="wbClear" title="Apagar tudo para todo mundo">🗑 Limpar</button>
+        <button id="wbClose" title="Fechar (Esc)">✕</button>
+      </div>
+      <div id="wbHolder"></div>
+      <p class="hint">Desenhe com o mouse: todo mundo vê ao vivo. No mundo, o 🔦 laser também desenha neste quadro (com a cor e a espessura escolhidas aqui).</p>
+    </div>
+  </div>
+
+  <div id="rchat" class="overlay hidden">
+    <div class="card wide rchatCard">
+      <div class="rchatHead">
+        <div class="rchatTitle"><h2 id="rchatName">Sala</h2><span id="rchatOwner" class="hint"></span></div>
+        <button id="rchatRename" class="hidden" title="Renomear a sala (só o dono)">✏️ Renomear</button>
+        <button id="rchatClose" title="Fechar (Esc)">✕</button>
+      </div>
+      <div id="rchatList"></div>
+      <form id="rchatForm" autocomplete="off">
+        <input id="rchatInput" maxlength="1000" placeholder="Mensagem ou link para quem está na sala… (Enter envia)">
+        <button class="primary" type="submit">Enviar</button>
+      </form>
+      <p class="hint rchatHint">Fica salvo na sala: quem entrar depois também vê. Links abrem em outra aba.</p>
+    </div>
+  </div>
+
+  <div id="loading" class="overlay hidden"><div class="card"><h2>Carregando o mundo…</h2><div class="bar"><div id="loadBar"></div></div></div></div>
+
+  <div id="menu" class="overlay hidden">
+    <div class="card menu">
+      <div id="page-main" class="page">
+        <h1>Voxel Hub</h1>
+        <p class="sub" id="menuSub">Pausado</p>
+        <div class="set inline"><label>Seu status</label><select id="menuStatus"><option value="disp">🟢 Disponível (automático)</option><option value="ocupado">🔴 Não disponível</option><option value="ausente">🟡 Ausente</option><option value="reuniao">🟣 Em reunião</option></select></div>
+        <button class="big primary" id="mContinue">▶ Continuar</button>
+        <button class="big" data-go="settings">⚙️ Configurações</button>
+        <button class="big" data-go="controls">🎮 Controles</button>
+        <button class="big" data-go="people">👥 Pessoas online: ver, ir até, chamar <span id="peopleCount" class="badge"></span></button>
+        <button class="big" data-go="shares">🖥️ Telas compartilhadas <span id="shareCount" class="badge"></span></button>
+        <button class="big" id="mInventory">🎒 Inventário</button>
+        <button class="big danger" id="mQuit">🚪 Sair do mundo</button>
+        <button class="big" id="mLogout" title="Esquece nome e e-mail salvos neste navegador">👋 Sair da conta (<span id="mLogoutWho"></span>)</button>
+      </div>
+
+      <div id="page-settings" class="page hidden">
+        <div class="pageHead"><button data-go="main">← Voltar</button><h2>Configurações</h2></div>
+        <div class="set inline"><label>Qualidade gráfica<br><small class="hint">Se estiver pesado, use "Desempenho"</small></label><select id="sQuality"><option value="baixa">Desempenho</option><option value="media">Equilibrada</option><option value="alta">Bonita (tela de alta resolução)</option></select></div>
+        <div class="set"><label>Sensibilidade do mouse <b id="vSens"></b></label><input type="range" id="sSens" min="10" max="300" step="5"></div>
+        <div class="set"><label>Campo de visão <b id="vFov"></b></label><input type="range" id="sFov" min="60" max="110" step="1"></div>
+        <div class="set"><label>Distância de visão <b id="vView"></b></label><input type="range" id="sView" min="40" max="300" step="10"></div>
+        <div class="set"><label>Volume das vozes <b id="vVol"></b></label><input type="range" id="sVol" min="0" max="200" step="5"></div>
+        <div class="set inline"><label>Modo de voz</label><select id="sVoice"><option value="prox">Proximidade</option><option value="global">Todos ouvem todos</option></select></div>
+        <div class="set inline"><label>Redução de ruído</label><select id="sNoise"><option value="normal">Normal</option><option value="forte">Forte</option><option value="off">Sem filtro</option></select></div>
+        <div class="set inline"><label>Compartilhar tela<br><small class="hint">Texto: nítido (planilha, código). Vídeo: fluido</small></label><select id="sScreenMode"><option value="text">Texto (nítido)</option><option value="motion">Vídeo (fluido)</option></select></div>
+        <div class="set inline"><label>Microfone</label><button id="sMic">Ligar</button></div>
+        <div class="set inline"><label>Skin<br><small class="hint">PNG 64×64 ou 64×32, padrão dos jogos de blocos</small></label>
+          <span class="skinRow"><canvas id="skinPreview" width="40" height="40"></canvas><button id="sSkinPick" class="primary">Escolher skin…</button><input type="file" id="sSkinFile" accept="image/png" class="hidden"></span></div>
+        <div class="set"><span id="skinStatus" class="hint"></span></div>
+        <div class="set inline"><label>Inverter eixo Y do mouse</label><input type="checkbox" id="sInvert"></div>
+        <div class="set inline"><label>Mostrar coordenadas e FPS</label><input type="checkbox" id="sInfo"></div>
+        <div class="set inline"><label>Combate (socar e levar soco)<br><small class="hint">Desligado: ninguém te acerta e você não acerta ninguém</small></label><input type="checkbox" id="sPvp"></div>
+      </div>
+
+      <div id="page-controls" class="page hidden">
+        <div class="pageHead"><button data-go="main">← Voltar</button><h2>Controles</h2></div>
+        <table class="keys">
+          <tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>Andar</td></tr>
+          <tr><td><kbd>Shift</kbd></td><td>Correr (no voo: descer)</td></tr>
+          <tr><td><kbd>Espaço</kbd></td><td>Pular (no voo: subir) · 2x rápido liga o voo</td></tr>
+          <tr><td><kbd>F</kbd></td><td>Ligar/desligar voo</td></tr>
+          <tr><td><kbd>Botão esq.</kbd></td><td>Quebrar bloco / remover modelo · com o laser: apontar</td></tr>
+          <tr><td><kbd>Botão dir.</kbd></td><td>Colocar bloco ou modelo · num bloco Tela: transmitir sua tela nele</td></tr>
+          <tr><td><kbd>Shift</kbd> + <kbd>Botão dir.</kbd></td><td>Construir em cima de um bloco Tela</td></tr>
+          <tr><td><kbd>Botão dir.</kbd> na cadeira/sofá</td><td>Sentar · <kbd>Espaço</kbd> ou <kbd>W A S D</kbd> levanta</td></tr>
+          <tr><td><kbd>Botão dir.</kbd> num quadro</td><td>Trocar a imagem</td></tr>
+          <tr><td><kbd>Botão dir.</kbd> no Kanban</td><td>Abrir o Kanban · <kbd>Shift</kbd> + botão dir.: mudar o tamanho do quadro</td></tr>
+          <tr><td><kbd>Botão esq.</kbd> num jogador</td><td>Socar (empurra e tira ❤️; quem perde todos volta ao início). Dá para desligar em Configurações</td></tr>
+          <tr><td><kbd>C</kbd> ou <kbd>F5</kbd></td><td>Câmera: primeira pessoa / terceira por trás / terceira pela frente</td></tr>
+          <tr><td><kbd>P</kbd></td><td>Trocar status: disponível / não disponível / ausente / em reunião</td></tr>
+          <tr><td><kbd>L</kbd></td><td>Trancar/destrancar a sala onde você está (ninguém de fora entra)</td></tr>
+          <tr><td><kbd>K</kbd></td><td>Tomar posse da sala onde você está (só você edita blocos e objetos dentro) · de novo: liberar</td></tr>
+          <tr><td><kbd>J</kbd></td><td>Chat da sala (fica salvo: bom para links)</td></tr>
+          <tr><td><kbd>B</kbd></td><td>Agenda da sala: ver e reservar horários</td></tr>
+          <tr><td><kbd>Y</kbd></td><td>Quando alguém te chamar: ir até a pessoa</td></tr>
+          <tr><td><kbd>Esc</kbd> → Pessoas</td><td>Ver onde cada um está, ir até a pessoa ou chamar</td></tr>
+          <tr><td><kbd>F1</kbd></td><td>Esconder/mostrar a interface (tela limpa, bom para print e apresentação)</td></tr>
+          <tr><td><kbd>Tab</kbd></td><td>Abrir/fechar o mapa (arraste para mover, rodinha para zoom)</td></tr>
+          <tr><td><kbd>Botão do meio</kbd></td><td>Copiar o bloco/modelo que está olhando para a barra</td></tr>
+          <tr><td><kbd>1</kbd>–<kbd>9</kbd> · rodinha</td><td>Escolher item da barra</td></tr>
+          <tr><td><kbd>R</kbd></td><td>Girar modelo 3D antes de colocar</td></tr>
+          <tr><td><kbd>X</kbd></td><td>Colocação livre (exatamente onde mira, ex.: teclado e monitor na mesma mesa) / encaixar na grade</td></tr>
+          <tr><td><kbd>E</kbd></td><td>Inventário (blocos, modelos 3D, laser, importar modelo)</td></tr>
+          <tr><td><kbd>Enter</kbd> / <kbd>T</kbd></td><td>Chat</td></tr>
+          <tr><td><kbd>M</kbd></td><td>Microfone</td></tr>
+          <tr><td><kbd>N</kbd></td><td>Redução de ruído: normal / forte / sem filtro</td></tr>
+          <tr><td><kbd>G</kbd></td><td>Compartilhar tela flutuando sobre você</td></tr>
+          <tr><td><kbd>V</kbd></td><td>Voz: proximidade / todos ouvem todos</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Este menu</td></tr>
+        </table>
+      </div>
+
+      <div id="page-people" class="page hidden">
+        <div class="pageHead"><button data-go="main">← Voltar</button><h2>Pessoas online</h2></div>
+        <p class="sub">Clique no nome (ou 📍) para ver no mapa. <b>➜ Ir até</b> leva você para o lado da pessoa. <b>🔔 Chamar</b> toca um aviso para ela — quem está "Em reunião" ou "Não disponível" não recebe.</p>
+        <div id="peopleList"></div>
+        <button id="notifBtn" class="hidden">🔔 Ativar avisos do navegador (para saber quando te chamarem com o jogo em outra aba)</button>
+      </div>
+
+      <div id="page-shares" class="page hidden">
+        <div class="pageHead"><button data-go="main">← Voltar</button><h2>Telas compartilhadas</h2></div>
+        <div id="shareList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="picker" class="overlay hidden">
+    <div class="card wide inv">
+      <div class="invHead"><h2>Inventário</h2><button id="pickerClose">Fechar ✕</button></div>
+      <p class="sub">Arraste os itens para a barra (ou clique num espaço e depois no item). Arraste de volta para a lista, ou botão direito no espaço, para tirar.</p>
+      <div id="invBar"></div>
+      <div class="tabs">
+        <button data-tab="blocks" class="sel">🧱 Blocos</button>
+        <button data-tab="deco">🪑 Móveis e parede</button>
+        <button data-tab="objetos">🌿 Objetos e plantas</button>
+        <button data-tab="natal">🎄 Natal</button>
+        <button data-tab="models">📦 Modelos 3D</button>
+        <button data-tab="tools">🔦 Ferramentas</button>
+      </div>
+      <div id="pickerGrid"></div>
+      <div id="importBox" class="hidden">
+        <h3>Importar modelo 3D</h3>
+        <input type="file" id="mFiles" multiple accept=".obj,.mtl,.fbx,.glb,.gltf,.bin,.stl,.png,.jpg,.jpeg,.tga,.bmp,.webp">
+        <div class="hint">Formatos: .obj (+ .mtl e texturas), .fbx, .glb/.gltf (+ .bin e texturas), .stl. Selecione todos os arquivos juntos.</div>
+        <label>Nome<input id="mName" maxlength="40" placeholder="Ex.: Mesa"></label>
+        <div class="row3">
+          <label>Largura (blocos)<input id="mW" type="number" min="0.1" max="64" step="0.5" value="1"></label>
+          <label>Profundidade (blocos)<input id="mD" type="number" min="0.1" max="64" step="0.5" value="1"></label>
+          <label>Altura (blocos)<input id="mH" type="number" min="0.1" max="64" step="0.5" placeholder="automática"></label>
+        </div>
+        <div class="row"><button id="mImport" class="primary">Importar</button><span id="mStatus"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="kbSizeDlg" class="overlay hidden">
+    <div class="card">
+      <h2 id="kbSizeTitle">Quadro Kanban</h2>
+      <div class="set inline" id="kbSourceRow"><label>Mostrar</label><select id="kbSource"></select></div>
+      <div id="kbColsRow">
+        <div class="kbColsHead"><span>Colunas que aparecem no quadro</span><button id="kbColsAll" type="button">Todas</button></div>
+        <div id="kbCols"></div>
+        <p id="kbColsHint" class="hint"></p>
+      </div>
+      <p class="sub">Tamanho em blocos. Cresce a partir do centro, encostado na parede.</p>
+      <div class="sizeRow"><span>Largura</span><button data-d="w-">−</button><b id="kbW">6</b><button data-d="w+">+</button><span class="hint" id="kbWHint">2 a 16</span></div>
+      <div class="sizeRow"><span>Altura</span><button data-d="h-">−</button><b id="kbH">3</b><button data-d="h+">+</button><span class="hint" id="kbHHint">1 a 6</span></div>
+      <p id="kbSizeStatus" class="hint"></p>
+      <div class="row"><button id="kbSizeOk" class="primary">Aplicar</button><button id="kbSizeCancel">Cancelar</button></div>
+    </div>
+  </div>
+
+  <div id="kanbanDlg" class="overlay hidden"><iframe id="kanbanFrame" title="Kanban do time"></iframe></div>
+
+  <div id="skinDlg" class="overlay hidden">
+    <div class="card wide inv">
+      <div class="invHead"><h2>Escolher skin</h2><button id="skClose">Fechar ✕</button></div>
+      <div class="tabs" id="skTabs">
+        <button data-sk="galeria" class="sel">🎲 Galeria</button><button data-sk="criar">🎨 Criar</button><button data-sk="buscar">🔎 Por nome</button><button data-sk="arquivo">📁 Arquivo</button><button data-sk="robo">🤖 Robô</button>
+      </div>
+      <div id="sk-galeria" class="skpage"><p class="sub">Clique numa skin para usar. Clique com o botão direito para editar no "Criar".</p><div id="skGallery" class="skGrid"></div><button id="skMore">🎲 Mais opções</button></div>
+      <div id="sk-criar" class="skpage hidden">
+        <div class="skEditor"><div id="skFields"></div>
+          <div class="skPrev"><canvas id="skPreview" width="96" height="192"></canvas><button id="skRandom">🎲 Aleatório</button><button id="skUse" class="primary">Usar esta skin</button><button id="skDownload">⬇ Baixar PNG</button></div>
+        </div>
+      </div>
+      <div id="sk-buscar" class="skpage hidden">
+        <p class="sub">Digite o nome de uma conta do Minecraft para usar a skin dela. Precisa de acesso à internet sem bloqueio (a rede da empresa bloqueia esses sites).</p>
+        <div class="row"><img id="skHead" alt="" width="48" height="48"><input id="skName" placeholder="Nome do jogador" maxlength="16"><button id="skFind" class="primary">Buscar e usar</button></div>
+      </div>
+      <div id="sk-arquivo" class="skpage hidden"><p class="sub">Envie um PNG de 64×64 ou 64×32 no layout padrão (com as camadas extras, se tiver).</p><button id="skFile" class="primary">Escolher arquivo PNG…</button></div>
+      <div id="sk-robo" class="skpage hidden"><p class="sub">Volta para o robozinho padrão, na cor que você escolheu ao entrar.</p><button id="skRobot" class="primary">Usar o robô</button></div>
+      <p id="skStatus" class="hint"></p>
+    </div>
+  </div>
+
+  <div id="frameDlg" class="overlay hidden">
+    <div class="card">
+      <h2 id="fTitle">Novo quadro</h2>
+      <label>Link da imagem ou GIF<input id="fUrl" placeholder="https://…/imagem.png ou .gif"></label>
+      <label>ou envie um arquivo de imagem<input id="fFile" type="file" accept="image/png,image/jpeg,image/gif,image/webp"></label>
+      <div class="row3" style="grid-template-columns: 1fr 1fr">
+        <label>Largura (blocos)<input id="fW" type="number" min="1" max="8" value="2"></label>
+        <label>Altura (blocos)<input id="fH" type="number" min="1" max="8" value="1"></label>
+      </div>
+      <p class="hint">Todo mundo vê a mesma imagem. Se um site bloquear o link, o servidor tenta buscar a imagem; se mesmo assim não der, envie o arquivo.</p>
+      <div class="row"><button id="fOk" class="primary">Colocar</button><button id="fCancel">Cancelar</button><span id="fStatus" class="hint"></span></div>
+    </div>
+  </div>
+
+  <div id="viewer" class="overlay hidden">
+    <div class="viewerBox">
+      <div class="viewerTop"><span id="viewerTitle"></span><span><button id="viewerFull">Tela cheia</button> <button id="viewerClose">Fechar ✕</button></span></div>
+      <video id="viewerVideo" autoplay playsinline muted></video>
+    </div>
+  </div>
+
+  <div id="disconnected" class="overlay hidden"><div class="card"><h2>Conexão perdida</h2><p class="sub">O servidor caiu ou a rede oscilou.</p><button class="primary" onclick="location.reload()">Reconectar</button></div></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

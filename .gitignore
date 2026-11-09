@@ -1,0 +1,14 @@
+# Dados do servidor: mundo, objetos, salas, Kanban, chats, reservas, certificados
+# e a configuração do ServiceNow (tem senha). Nunca vão para o repositório.
+data/
+
+# Dependências (opcionais) instaladas pelo npm
+node_modules/
+
+# Configurações locais do editor/assistente
+.claude/
+
+# Diversos
+*.log
+.DS_Store
+Thumbs.db

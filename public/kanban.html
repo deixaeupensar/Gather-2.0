@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kanban do Time</title>
+  <link rel="stylesheet" href="/kanban.css">
+</head>
+<body>
+  <header class="top">
+    <img src="/img/hapvida.png" class="logo" alt="">
+    <div class="ttl"><h1 id="title">Kanban do time</h1><span id="sub">carregando…</span></div>
+    <select id="fBoard" class="boardSel" title="Qual quadro"><option value="time">📌 Kanban do time</option></select>
+    <div class="seg" id="views">
+      <button data-view="estado" class="sel">Por estado</button>
+      <button data-view="pessoa">Por pessoa</button>
+    </div>
+    <div class="filters">
+      <select id="fPerson" title="Filtrar por pessoa"></select>
+      <select id="fPrio" title="Filtrar por prioridade">
+        <option value="">Todas as prioridades</option>
+        <option value="critica">Crítica</option><option value="alta">Alta</option><option value="media">Média</option><option value="baixa">Baixa</option>
+      </select>
+      <input id="fSearch" type="search" placeholder="Buscar tarefa, tag, Azure…">
+    </div>
+    <div class="actions">
+      <button id="btnNew" class="primary">+ Nova tarefa</button>
+      <button id="btnPeople" title="Pessoas do time">👥 Pessoas</button>
+      <button id="btnCols" title="Colunas (estados)">🧱 Colunas</button>
+      <button id="btnClose" class="close" title="Voltar ao jogo (Esc)">✕</button>
+    </div>
+  </header>
+  <div id="snBar" class="snBar hidden"></div>
+  <div id="crumb" class="crumb hidden"></div>
+  <main id="board"></main>
+
+  <dialog id="dlgTask">
+    <form method="dialog" id="taskForm">
+      <div class="dlgHead"><h2 id="taskTitle">Nova tarefa</h2><span id="taskMeta" class="muted"></span></div>
+      <label class="full">Título<input name="title" required maxlength="200" placeholder="O que precisa ser feito?"></label>
+      <label class="full">Descrição<textarea name="description" rows="5" maxlength="8000" placeholder="Detalhes, critérios de aceite, links…"></textarea></label>
+      <div class="grid">
+        <label>Estado<select name="status"></select></label>
+        <label>Responsável<select name="assignee"></select></label>
+        <label>Prioridade<select name="priority"><option value="critica">🔴 Crítica</option><option value="alta">🟠 Alta</option><option value="media">🟡 Média</option><option value="baixa">🟢 Baixa</option></select></label>
+        <label>Tipo<select name="type"><option value="tarefa">📋 Tarefa</option><option value="bug">🐞 Bug</option><option value="melhoria">✨ Melhoria</option><option value="estudo">📚 Estudo</option><option value="reuniao">🗓️ Reunião</option></select></label>
+        <label>Prazo<input name="due" type="date"></label>
+        <label>Estimativa (h)<input name="estimate" type="number" min="0" max="999" step="0.5"></label>
+        <label class="span2">Tags (separadas por vírgula)<input name="tags" maxlength="300" placeholder="front, api, urgente"></label>
+      </div>
+      <!-- Azure ID e link não aparecem mais no formulário, mas continuam salvos na tarefa -->
+      <input type="hidden" name="azureId"><input type="hidden" name="link">
+      <div id="commentsBox" class="full">
+        <h3>Comentários</h3>
+        <div id="comments"></div>
+        <div class="row"><input id="commentText" placeholder="Escreva um comentário…" maxlength="2000"><button type="button" id="btnComment">Comentar</button></div>
+      </div>
+      <div class="dlgFoot">
+        <button type="button" id="btnDelete" class="danger">Excluir</button>
+        <span class="spacer"></span>
+        <button value="cancel" formnovalidate>Cancelar</button>
+        <button type="submit" value="save" class="primary">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgSn">
+    <form method="dialog" id="snForm">
+      <div class="dlgHead"><h2 id="snNumber">SCTASK…</h2><a id="snLink" target="_blank" rel="noopener">Abrir no ServiceNow ↗</a></div>
+      <h3 id="snTitle" class="snTitle"></h3>
+      <div id="snMeta" class="muted"></div>
+      <div id="snDesc" class="snDesc"></div>
+      <div class="grid" style="grid-template-columns: 1fr 1fr">
+        <label>Estado<select name="status"></select></label>
+        <label>Atribuído a<select name="assignee"></select></label>
+      </div>
+      <label class="full"><span>Comentário adicional (comments) — <span class="pub">visível para o solicitante</span></span><textarea name="comment" rows="3" maxlength="4000" placeholder="Opcional — resposta ou atualização para quem abriu o chamado"></textarea></label>
+      <label class="full">Anotação de trabalho (work note) — interna<textarea name="note" rows="2" maxlength="4000" placeholder="Opcional — só a equipe vê"></textarea></label>
+      <p class="muted">As mudanças são gravadas no ServiceNow pelo usuário de integração, com o seu nome no texto.</p>
+      <div class="full">
+        <h3 class="histTitle">Histórico</h3>
+        <div id="snJournal" class="journal"><div class="muted">Carregando…</div></div>
+      </div>
+      <div class="dlgFoot"><span id="snStatus" class="muted"></span><span class="spacer"></span><button value="cancel" formnovalidate>Cancelar</button><button type="submit" value="save" class="primary">Salvar no ServiceNow</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgPeople">
+    <form method="dialog">
+      <div class="dlgHead"><h2>Pessoas do time</h2></div>
+      <p class="muted">Use o mesmo nome que a pessoa usa no jogo para o quadro "Minhas tarefas" funcionar.</p>
+      <div id="peopleList" class="list"></div>
+      <button type="button" id="btnAddPerson">+ Adicionar pessoa</button>
+      <div class="dlgFoot"><span class="spacer"></span><button value="cancel" formnovalidate>Cancelar</button><button value="save" id="btnSavePeople" class="primary">Salvar</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="dlgCols">
+    <form method="dialog">
+      <div class="dlgHead"><h2>Colunas (estados)</h2></div>
+      <p class="muted">Marque "finalizado" nas colunas de tarefas concluídas (elas somem da visão por pessoa).</p>
+      <div id="colsList" class="list"></div>
+      <button type="button" id="btnAddCol">+ Adicionar coluna</button>
+      <div class="dlgFoot"><span class="spacer"></span><button value="cancel" formnovalidate>Cancelar</button><button value="save" id="btnSaveCols" class="primary">Salvar</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast"></div>
+  <script type="module" src="/js/kanban-app.js"></script>
+</body>
+</html>

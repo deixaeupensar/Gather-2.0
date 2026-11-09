@@ -1,0 +1,15 @@
+{
+  "name": "voxel-hub",
+  "version": "1.0.0",
+  "description": "Mundo voxel 3D multiplayer com voz por proximidade e compartilhamento de tela",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "set HTTP=1&& node server.js"
+  },
+  "dependencies": {},
+  "optionalDependencies": {
+    "three": "0.170.0"
+  }
+}
