@@ -97,6 +97,13 @@ function generateWorld() {
 }
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
+// primeira vez (data/ sem mundo): começa com o escritório pronto que está em mundo-inicial/
+// (gerado por tools/exportar-mundo.js; vai junto no repositório)
+const SEED_DIR = path.join(__dirname, 'mundo-inicial');
+if (!fs.existsSync(WORLD_FILE) && fs.existsSync(path.join(SEED_DIR, 'world.bin'))) {
+  fs.cpSync(SEED_DIR, DATA_DIR, { recursive: true });
+  console.log('Primeira vez: escritório inicial copiado de mundo-inicial/');
+}
 let world;
 if (fs.existsSync(WORLD_FILE) && fs.statSync(WORLD_FILE).size === W * H * D) {
   world = new Uint8Array(fs.readFileSync(WORLD_FILE));

@@ -154,6 +154,18 @@ Exemplo no PowerShell: `$env:PORT=8443; node server.js`
 - `lib/ws-lite.js`: WebSocket sem dependências
 - `public/js/`: o jogo (`main.js` controles/interface, `world.js` malha 3D, `blocks.js` blocos e texturas, `avatars.js`, `rtc.js` voz e tela)
 
+## Escritório inicial (`mundo-inicial/`)
+
+O repositório leva o escritório pronto: mundo, objetos, salas, imagens dos quadros, skins e quadros brancos. Na primeira vez que o servidor roda (pasta `data/` sem mundo), ele copia `mundo-inicial/` para `data/` e já começa com o escritório montado.
+
+Para atualizar o escritório do repositório com o que está no servidor agora:
+
+```
+node tools/exportar-mundo.js
+```
+
+Ficam de fora (e nunca vão para o repositório): a configuração e a senha do ServiceNow, os certificados, o Kanban (tarefas e e-mails), o chat das salas, as reservas e os backups. As salas vão sem dono e destrancadas, porque o dono é identificado pelo e-mail.
+
 ## Limites e observações
 
 - Voz e tela são P2P em malha: cada pessoa conecta direto com cada outra. Funciona bem até umas 10–12 pessoas. Mais do que isso pede um servidor de mídia (SFU).
