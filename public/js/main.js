@@ -21,7 +21,7 @@ const store = {
 
 // ------------------------------------------------------------ cena
 const canvas = $('#game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const AA = (store.get('settings', {}) || {}).quality !== 'baixa'; const renderer = new THREE.WebGLRenderer({ canvas, antialias: AA, powerPreference: 'high-performance' }); // "Desempenho" liga sem suavização de bordas (MSAA); só dá para escolher ao criar o contexto, então vale ao recarregar a página
 renderer.setPixelRatio(1); // ajustado pela "Qualidade gráfica" nas configurações
 const SKY = 0x9fd3ff;
 const scene = new THREE.Scene();
@@ -749,7 +749,7 @@ function syncSettingsForm() {
 }
 for (const [id, key] of [['#sSens', 'sens'], ['#sFov', 'fov'], ['#sView', 'view'], ['#sVol', 'vol']]) $(id).oninput = e => { settings[key] = Number(e.target.value); applySettings(); };
 $('#sInvert').onchange = e => { settings.invert = e.target.checked; applySettings(); };
-$('#sQuality').onchange = e => { settings.quality = e.target.value; applySettings(); };
+$('#sQuality').onchange = e => { settings.quality = e.target.value; applySettings(); if ((settings.quality !== 'baixa') !== AA) toast(AA ? 'Recarregue a página (F5) para desligar também a suavização de bordas' : 'Recarregue a página (F5) para religar a suavização de bordas'); };
 $('#sInfo').onchange = e => { settings.info = e.target.checked; applySettings(); };
 $('#sPvp').onchange = e => { settings.pvp = e.target.checked; applySettings(); send({ t: 'pvp', on: settings.pvp }); hp = MAX_HP; renderHearts(); toast(settings.pvp ? 'Combate ligado: dá para socar e levar soco' : 'Combate desligado: ninguém te acerta e você não acerta ninguém'); };
 $('#sVoice').onchange = e => { if (e.target.value !== voiceMode) toggleVoice(); };
