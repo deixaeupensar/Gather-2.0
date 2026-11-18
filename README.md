@@ -166,6 +166,26 @@ node tools/exportar-mundo.js
 
 Ficam de fora (e nunca vão para o repositório): a configuração e a senha do ServiceNow, os certificados, o Kanban (tarefas e e-mails), o chat das salas, as reservas e os backups. As salas vão sem dono e destrancadas, porque o dono é identificado pelo e-mail.
 
+## Sala gamer (`tools/sala-gamer.js`)
+
+Transforma uma sala do prédio numa sala gamer: painéis escuros com neon, piso e teto escuros com faixas de neon, **TV enorme na parede** (a TV normal do jogo: botão direito compartilha a tela), duas estações com PC gamer, 3 fliperamas, frigobar, sofá, puffs e placas de neon. Tira a mobília que estava na sala e pode rodar de novo na mesma sala.
+
+```
+node tools/sala-gamer.js "Sala 07"          (com o servidor parado)
+node tools/sala-gamer.js "Sala 07" --nome="Sala Gamer"   (e renomeia)
+node tools/sala-gamer.js "Sala 07" --parede=+x         (escolhe a parede da TV; padrão: a oposta à porta)
+```
+
+Ele acha a porta sozinho, faz backup em `data/backup-sala-gamer-…` e funciona com qualquer sala de pelo menos 7×7. Depois, para levar para o Render: `node tools/exportar-mundo.js` e `git push`.
+
+Atenção: `gerar-escritorio.js` refaz o prédio inteiro e apaga a sala gamer; se rodar, rode o `sala-gamer.js` de novo depois. O `atualizar-predio.js` não desfaz a sala (só recoloca os painéis de ripado, que ficam escondidos atrás do forro).
+
+Novidades usadas pela sala (também aparecem no inventário, **E**):
+- **Blocos de neon** (ids 54 a 60: rosa, ciano, roxo, verde, azul, laranja, vermelho). Brilham sozinhos, sem sombra por face. O servidor aceita blocos até o id 63 (`MAX_BLOCK_ID`), então sobram 3 ids.
+- **Decorações**: cadeira gamer, PC gamer (gabinete RGB), fliperama, coluna de LED RGB, placas de neon "GAMER" e "GAME ON", videogame e controle.
+
+> Decoração nova precisa ser registrada em **dois lugares**: `DECOR` em `public/js/decor.js` e a lista `BUILTIN` em `server.js`. Sem o segundo, o servidor descarta os objetos.
+
 ## Limites e observações
 
 - Voz e tela são P2P em malha: cada pessoa conecta direto com cada outra. Funciona bem até umas 10–12 pessoas. Mais do que isso pede um servidor de mídia (SFU).

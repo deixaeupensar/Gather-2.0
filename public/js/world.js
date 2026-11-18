@@ -1,6 +1,6 @@
 // Dados do mundo, geração de malha por chunk (com oclusão de ambiente) e raycast
 import * as THREE from 'three';
-import { faceTiles, isOpaque, TILE_COUNT, TV_TILE, TV_ID } from './blocks.js';
+import { faceTiles, isOpaque, isEmissive, TILE_COUNT, TV_TILE, TV_ID } from './blocks.js';
 
 export const CH = 16;
 
@@ -24,6 +24,9 @@ for (const F of FACES) {
 const TV_TILES = Array.from({ length: 16 }, (_, m) => TV_TILE(m));
 const OPAQUE = new Uint8Array(256);
 for (let b = 0; b < 256; b++) OPAQUE[b] = isOpaque(b) ? 1 : 0;
+// blocos de neon brilham: sem sombra por face nem oclusão de ambiente
+const EMISSIVE = new Uint8Array(256);
+for (let b = 0; b < 256; b++) EMISSIVE[b] = isEmissive(b) ? 1 : 0;
 
 export class World {
   constructor(W, H, D, data, scene, material) {
@@ -107,7 +110,7 @@ export class World {
           const s1 = occ(nx + ux, ny + uy, nz + uz), s2 = occ(nx + vx, ny + vy, nz + vz), s3 = occ(nx + ux + vx, ny + uy + vy, nz + uz + vz);
           const a = s1 && s2 ? 0 : 3 - (s1 + s2 + s3);
           ao[i] = a;
-          const l = F.shade * AO[a];
+          const l = EMISSIVE[b] ? 1 : F.shade * AO[a];
           col.push(l, l, l);
         }
         if (ao[0] + ao[3] > ao[1] + ao[2]) ind.push(n, n + 1, n + 3, n, n + 3, n + 2);

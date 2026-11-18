@@ -140,7 +140,9 @@ const BUILTIN = new Set(['mesa', 'mesa_escritorio', 'cadeira', 'cadeira_escritor
   'cadeira_escritorio_preta', 'cadeira_escritorio_vermelha', 'cadeira_escritorio_cinza', 'mesa_escritorio_madeira', 'mesa_escritorio_preta', 'mesa_centro', 'mesa_redonda', 'mesa_redonda_madeira',
   'tapete_azul', 'tapete_cinza', 'tapete_verde', 'estante', 'gaveteiro', 'quadro_branco', 'mural', 'relogio', 'cabideiro',
   'cafeteira', 'impressora', 'frigobar', 'microondas', 'extintor', 'lixeiras_reciclagem', 'luminaria_mesa', 'headset', 'livros', 'garrafa', 'garrafa_rosa', 'caneca_azul', 'caneca_laranja',
-  'vaso_flores', 'vaso_flores_amarelas', 'cacto', 'costela_adao', 'suculenta', 'arvore_interna', 'lousa', 'alertas'].map(k => 'd:' + k));
+  'vaso_flores', 'vaso_flores_amarelas', 'cacto', 'costela_adao', 'suculenta', 'arvore_interna', 'lousa', 'alertas',
+  // sala gamer
+  'cadeira_gamer', 'gabinete_gamer', 'arcade', 'torre_led', 'neon_gamer', 'neon_game_on', 'console_game', 'controle_game'].map(k => 'd:' + k));
 const modelExists = id => BUILTIN.has(id) || models.some(m => m.id === id);
 objects = readJSON(OBJECTS_FILE, []).filter(o => modelExists(o.model));
 const kanban = new Kanban(DATA_DIR);

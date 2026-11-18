@@ -245,6 +245,57 @@ function roundTable(top, foot) {
   return [[4, 11, 0, 24, 2, 32, top], [0, 11, 4, 32, 2, 24, top], [2, 11, 2, 28, 2, 28, top], [14, 1, 14, 4, 10, 4, foot], [10, 0, 10, 12, 1, 12, foot]];
 }
 
+// ---- sala gamer: itens com neon (a 8ª posição da caixa liga o brilho)
+function gamerChair() {
+  const base = '#16161a', seat = '#18181d', dark = '#101014', pink = '#ff2bd6';
+  return [[2, 0, 7, 12, 1, 2, base], [7, 0, 2, 2, 1, 12, base], [7, 1, 7, 2, 6, 2, '#2a2a30'],
+    [2, 7, 2, 12, 2, 12, seat], [2, 9, 2, 2, 3, 11, dark], [12, 9, 2, 2, 3, 11, dark],
+    [2.2, 12, 3, 1.6, 0.5, 9, pink, 1], [12.2, 12, 3, 1.6, 0.5, 9, pink, 1],
+    [3, 9, 1, 10, 13, 2, seat], [7, 9, 3, 2, 12, 0.5, pink, 1],
+    [4, 22, 1, 8, 4, 2.4, dark], [5, 23, 3.4, 6, 2, 0.4, pink, 1],
+    [1, 10, 5, 1, 4, 8, base], [14, 10, 5, 1, 4, 8, base]];
+}
+function gamerPC() {
+  return [[4, 0, 1, 8, 15, 14, '#141418'], [4.3, 1, 15, 7.4, 13, 0.5, '#0b1620'],
+    [5, 2, 15.4, 6, 2, 0.3, '#14e8ff', 1], [5, 6, 15.4, 6, 2, 0.3, '#ff2bd6', 1], [5, 10, 15.4, 6, 2, 0.3, '#9a4dff', 1],
+    [4.2, 1, 15.4, 0.5, 13, 0.3, '#2dff6a', 1], [11.3, 1, 15.4, 0.5, 13, 0.3, '#2dff6a', 1]];
+}
+function arcadeCabinet() {
+  const body = '#17172b';
+  return [[1, 0, 2, 14, 11, 12, body], [1, 11, 6, 14, 3, 9, '#262648'],
+    [3, 14, 10, 2, 1, 2, '#ff2a3d', 1], [7, 14, 10, 2, 1, 2, '#ffe23a', 1], [11, 14, 10, 2, 1, 2, '#14e8ff', 1],
+    [1, 14, 2, 14, 14, 8, body], [2, 15, 10, 12, 11, 0.4, '#0a0a12'], [3, 16, 10.4, 10, 9, 0.3, '#1fb6ff', 1],
+    [6, 19, 10.7, 4, 3, 0.3, '#ff2bd6', 1], [4, 17, 10.7, 2, 1, 0.3, '#ffffff', 1], [10, 17, 10.7, 2, 1, 0.3, '#ffffff', 1],
+    [1, 28, 2, 14, 3, 10, body], [2, 28.5, 12, 12, 2, 0.4, '#ff2bd6', 1],
+    [0.4, 2, 4, 0.6, 26, 8, '#ff2bd6', 1], [15, 2, 4, 0.6, 26, 8, '#14e8ff', 1]];
+}
+function gameConsole() {
+  return [[2, 0, 3, 12, 1.6, 10, '#101014'], [2, 0.5, 13, 12, 0.5, 0.3, '#14e8ff', 1], [3, 1.1, 13, 1, 0.4, 0.3, '#2dff6a', 1], [4, 1, 13, 6, 0.3, 0.3, '#000000']];
+}
+function gamepad() {
+  return [[4, 0, 5, 8, 1, 5, '#1a1a22'], [3, 0, 5, 2, 1.2, 6, '#1a1a22'], [11, 0, 5, 2, 1.2, 6, '#1a1a22'],
+    [5.2, 1, 6.5, 1.6, 0.6, 1.6, '#0b0b10'], [9.2, 1, 6.5, 1.6, 0.6, 1.6, '#0b0b10'],
+    [7.2, 1, 8, 0.8, 0.5, 0.8, '#2dff6a', 1], [8.2, 1, 8.6, 0.8, 0.5, 0.8, '#ff2a3d', 1], [6.2, 1, 8.6, 0.8, 0.5, 0.8, '#14e8ff', 1]];
+}
+function ledTower() {
+  return [[5, 0, 5, 6, 1, 6, '#18181c'], [6, 1, 6, 4, 10, 4, '#14e8ff', 1], [6, 11, 6, 4, 10, 4, '#9a4dff', 1], [6, 21, 6, 4, 10, 4, '#ff2bd6', 1], [5, 31, 5, 6, 1, 6, '#18181c']];
+}
+// letras de 3x5 "pixels" para placas de neon: cada pixel aceso vira uma caixa que brilha
+const FONT3x5 = {
+  G: ['XXX', 'X..', 'X.X', 'X.X', 'XXX'], A: ['XXX', 'X.X', 'XXX', 'X.X', 'X.X'], M: ['X.X', 'XXX', 'XXX', 'X.X', 'X.X'],
+  E: ['XXX', 'X..', 'XXX', 'X..', 'XXX'], R: ['XXX', 'X.X', 'XXX', 'XX.', 'X.X'], O: ['XXX', 'X.X', 'X.X', 'X.X', 'XXX'],
+  N: ['XX.', 'X.X', 'X.X', 'X.X', 'X.X'], ' ': ['...', '...', '...', '...', '...'],
+};
+function neonSign(text, color, px) {
+  const W = 64, total = text.length * 3 + (text.length - 1);
+  const x0 = (W - total * px) / 2, y0 = (16 - 5 * px) / 2;
+  const b = [[0, 0, 0, W, 16, 0.8, '#0b0b12']]; // placa escura atrás das letras
+  [...text].forEach((ch, i) => FONT3x5[ch].forEach((row, r) => [...row].forEach((c, k) => {
+    if (c === 'X') b.push([x0 + (i * 4 + k) * px, y0 + (4 - r) * px, 0.8, px, px, 0.7, color, 1]);
+  })));
+  return b;
+}
+
 export const DECOR = {
   // ---------- móveis
   mesa: { name: 'Mesa de madeira', icon: '🪵', cat: 'deco', size: [2, 0.81, 1], boxes: [[0, 11, 0, 32, 2, 16, WOOD], ...legs4(32, 16, 11, WOOD_D)] },
@@ -292,6 +343,15 @@ export const DECOR = {
   porta: { name: 'Porta automática (2 de largura)', icon: '🚪', cat: 'deco', size: [2, 3, 1], door: true, boxes: [] },
   kanban: { name: 'Quadro Kanban do time', icon: '📌', cat: 'deco', size: [6, 3, 0.125], wall: true, kanban: 'time', boxes: [] },
   kanban_meu: { name: 'Minhas tarefas (Kanban)', icon: '✅', cat: 'deco', size: [3, 2, 0.125], wall: true, kanban: 'meu', boxes: [] },
+  // sala gamer
+  cadeira_gamer: { name: 'Cadeira gamer', icon: '🎮', cat: 'deco', size: [1, 1.65, 1], sit: 9 / 16, boxes: gamerChair() },
+  gabinete_gamer: { name: 'PC gamer (gabinete RGB)', icon: '🖥️', cat: 'deco', size: [1, 0.95, 1], boxes: gamerPC() },
+  arcade: { name: 'Fliperama (arcade)', icon: '🕹️', cat: 'deco', size: [1, 1.95, 1], boxes: arcadeCabinet() },
+  torre_led: { name: 'Coluna de LED RGB', icon: '🌈', cat: 'deco', size: [1, 2, 1], boxes: ledTower() },
+  neon_gamer: { name: 'Placa de neon: GAMER', icon: '💗', cat: 'deco', size: [4, 1, 0.125], wall: true, boxes: neonSign('GAMER', '#ff2bd6', 3) },
+  neon_game_on: { name: 'Placa de neon: GAME ON', icon: '💙', cat: 'deco', size: [4, 1, 0.125], wall: true, boxes: neonSign('GAME ON', '#14e8ff', 2) },
+  console_game: { name: 'Videogame (console)', icon: '🎮', cat: 'objetos', size: [1, 0.12, 1], boxes: gameConsole() },
+  controle_game: { name: 'Controle de videogame', icon: '🎮', cat: 'objetos', size: [1, 0.08, 1], boxes: gamepad() },
   tv: { name: 'Tela (TV) para compartilhar', icon: '📺', cat: 'deco', size: [4, 2, 0.125], wall: true, tv: true, boxes: [] },
   lousa: { name: 'Quadro branco interativo (desenhar)', icon: '✏️', cat: 'deco', size: [3, 2, 0.125], wall: true, lousa: true, boxes: [] },
   alertas: { name: 'Painel de alertas (chamados)', icon: '🚨', cat: 'deco', size: [3, 2, 0.125], wall: true, kanban: 'alertas', boxes: [] },

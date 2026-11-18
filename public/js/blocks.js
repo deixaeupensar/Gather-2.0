@@ -154,6 +154,16 @@ const slats = (h, gap) => (img, R) => {
   }
 };
 
+// neon: cor viva com centro mais claro. Os blocos com `emissive` ignoram o sombreamento por face (brilham)
+const neon = h => (img, R) => {
+  const c = hex(h), lift = (v, w) => clamp(v + (255 - v) * w);
+  for (let y = 0; y < T; y++) for (let x = 0; x < T; x++) {
+    const k = Math.max(0, 1 - Math.hypot(x - 7.5, y - 7.5) / 9.5) * 0.55;
+    px(img, x, y, [lift(c[0], k), lift(c[1], k), lift(c[2], k)]);
+  }
+  border(img, mul(c, 0.86));
+};
+
 // ids são persistidos no mundo: só adicione no final, nunca reordene
 export const BLOCKS = [
   null,
@@ -212,6 +222,14 @@ export const BLOCKS = [
   { name: 'Painel de LED', all: 'm_led', paint: ledPanel },
   { name: 'Madeira nogueira', all: 'm_walnut', paint: woodFloor('#7a5236') },
   { name: 'Ripado de madeira', all: 'm_slats', paint: slats('#8a5a3b', '#2f241d') },
+  // neon (brilho próprio): ids 54 a 60. O servidor aceita blocos até o id 63 (MAX_BLOCK_ID em server.js)
+  { name: 'Neon rosa', all: 'n_pink', emissive: true, paint: neon('#ff2bd6') },
+  { name: 'Neon ciano', all: 'n_cyan', emissive: true, paint: neon('#14e8ff') },
+  { name: 'Neon roxo', all: 'n_purple', emissive: true, paint: neon('#9a4dff') },
+  { name: 'Neon verde', all: 'n_green', emissive: true, paint: neon('#2dff6a') },
+  { name: 'Neon azul', all: 'n_blue', emissive: true, paint: neon('#2f6bff') },
+  { name: 'Neon laranja', all: 'n_orange', emissive: true, paint: neon('#ff8a1f') },
+  { name: 'Neon vermelho', all: 'n_red', emissive: true, paint: neon('#ff2a3d') },
 ];
 // os painters "c_*" precisam ser registrados
 BLOCKS.forEach(b => { if (b && b.paint) painters[b.all] = b.paint; });
@@ -233,6 +251,7 @@ export const BLOCK_IDS = BLOCKS.map((b, i) => i).filter(i => i > 0);
 export const isTransparent = id => !!(BLOCKS[id] && BLOCKS[id].transparent);
 export const isOpaque = id => id > 0 && !!BLOCKS[id] && !BLOCKS[id].transparent;
 export const isSolid = id => id > 0;
+export const isEmissive = id => !!(BLOCKS[id] && BLOCKS[id].emissive);
 
 // --- atlas
 const tileNames = [];
