@@ -296,6 +296,21 @@ function neonSign(text, color, px) {
   return b;
 }
 
+// ---- setup minimalista: PC de topo e caixa de som de torre (sem RGB; só um LED branco discreto)
+function pcTorre() {
+  const dark = '#121316', glass = '#0c1014', white = '#e6eef6';
+  return [[3, 0, 1, 10, 15, 14, dark], [3.4, 1, 15, 9.2, 13, 0.5, glass],
+    [5.5, 2, 15.4, 5, 5, 0.3, white, 1], [6.8, 3.3, 15.7, 2.4, 2.4, 0.3, dark],
+    [5.5, 8.5, 15.4, 5, 5, 0.3, white, 1], [6.8, 9.8, 15.7, 2.4, 2.4, 0.3, dark],
+    [3.2, 1, 15.4, 0.4, 13, 0.3, '#ffffff', 1], [4, 15, 3, 8, 0.3, 10, '#1d1f24'], [3, 0, 14, 10, 1, 1, '#1d1f24']];
+}
+function caixaSom() {
+  const wood = '#6b4a32', fabric = '#3a3d42', hole = '#1b1c1f';
+  return [[4.5, 0, 3.5, 7, 1, 9, '#26282c'], [5, 1, 4, 6, 21, 8, wood], [5.4, 2, 12, 5.2, 19, 0.4, fabric],
+    [7, 17, 12.4, 2, 2, 0.3, hole], [6, 8, 12.4, 4, 4, 0.3, hole], [7.2, 9.2, 12.7, 1.6, 1.6, 0.3, '#2a2c30'],
+    [7.6, 3, 12.4, 0.8, 0.5, 0.3, '#ffffff', 1]];
+}
+
 export const DECOR = {
   // ---------- móveis
   mesa: { name: 'Mesa de madeira', icon: '🪵', cat: 'deco', size: [2, 0.81, 1], boxes: [[0, 11, 0, 32, 2, 16, WOOD], ...legs4(32, 16, 11, WOOD_D)] },
@@ -352,6 +367,9 @@ export const DECOR = {
   neon_game_on: { name: 'Placa de neon: GAME ON', icon: '💙', cat: 'deco', size: [4, 1, 0.125], wall: true, boxes: neonSign('GAME ON', '#14e8ff', 2) },
   console_game: { name: 'Videogame (console)', icon: '🎮', cat: 'objetos', size: [1, 0.12, 1], boxes: gameConsole() },
   controle_game: { name: 'Controle de videogame', icon: '🎮', cat: 'objetos', size: [1, 0.08, 1], boxes: gamepad() },
+  // setup minimalista
+  pc_torre: { name: 'PC torre (top de linha)', icon: '🖥️', cat: 'deco', size: [1, 0.95, 1], boxes: pcTorre() },
+  caixa_som: { name: 'Caixa de som (torre)', icon: '🔊', cat: 'deco', size: [1, 1.4, 1], boxes: caixaSom() },
   tv: { name: 'Tela (TV) para compartilhar', icon: '📺', cat: 'deco', size: [4, 2, 0.125], wall: true, tv: true, boxes: [] },
   lousa: { name: 'Quadro branco interativo (desenhar)', icon: '✏️', cat: 'deco', size: [3, 2, 0.125], wall: true, lousa: true, boxes: [] },
   alertas: { name: 'Painel de alertas (chamados)', icon: '🚨', cat: 'deco', size: [3, 2, 0.125], wall: true, kanban: 'alertas', boxes: [] },

@@ -142,21 +142,8 @@ O microfone passa por supressão de ruído do navegador, filtros (corta zumbido 
 | `HTTP=1` | desligado | serve HTTP puro, para usar atrás de um proxy/túnel que já entrega HTTPS |
 | `CERT_FILE` / `KEY_FILE` | — | usar um certificado de verdade (PEM) em vez do autoassinado |
 | `ICE_SERVERS` | STUN do Google | JSON com STUN/TURN para o WebRTC, ex.: `[{"urls":"turn:meu-servidor:3478","username":"u","credential":"s"}]` |
-| `ROOM_OWNERS` | — | donos fixos de sala, reaplicados a cada subida (veja "Dono fixo da sala"). Ex.: `{"Sala 01": {"email": "voce@empresa.com", "nome": "Seu Nome"}}` |
 
 Exemplo no PowerShell: `$env:PORT=8443; node server.js`
-
-### Dono fixo da sala (`ROOM_OWNERS`)
-
-Tomar posse de uma sala (**K** dentro dela) é gravado na hora em `data/rooms.json` e sobrevive a reiniciar o servidor, mesmo que ele caia. Mas hospedagens com disco temporário (como o plano grátis do Render) voltam ao `mundo-inicial/` a cada reinício, e o `mundo-inicial/` não guarda donos (o dono é identificado pelo e-mail, que não deve ir para o repositório). Para o dono não se perder, defina no servidor a variável `ROOM_OWNERS`:
-
-```
-ROOM_OWNERS={"Sala 01": {"email": "voce@empresa.com", "nome": "Seu Nome"}}
-```
-
-- `email` é o e-mail que a pessoa usa para entrar no jogo; `nome` é o que aparece em "é de …". A chave pode ser o nome ou o id da sala (sem diferenciar maiúsculas e acentos). Pode ter várias salas no mesmo JSON.
-- É reaplicado a cada subida, só em sala **sem dono**: quem tomou posse dentro do jogo continua dono. Se o dono "liberar" a sala (K de novo), ela volta a ser dele na próxima subida.
-- JSON inválido só gera um aviso no log; o servidor sobe do mesmo jeito.
 
 ## Arquivos
 
@@ -179,23 +166,28 @@ node tools/exportar-mundo.js
 
 Ficam de fora (e nunca vão para o repositório): a configuração e a senha do ServiceNow, os certificados, o Kanban (tarefas e e-mails), o chat das salas, as reservas e os backups. As salas vão sem dono e destrancadas, porque o dono é identificado pelo e-mail.
 
-## Sala gamer (`tools/sala-gamer.js`)
+## Sala temática (`tools/sala-gamer.js`)
 
-Transforma uma sala do prédio numa sala gamer: painéis escuros com neon, piso e teto escuros com faixas de neon, **TV enorme na parede** (a TV normal do jogo: botão direito compartilha a tela), duas estações com PC gamer, 3 fliperamas, frigobar, sofá, puffs e placas de neon. Tira a mobília que estava na sala e pode rodar de novo na mesma sala.
+Transforma uma sala do prédio numa sala temática, com uma **TV enorme na parede** (a TV normal do jogo: botão direito compartilha a tela). Tira a mobília que estava na sala e pode rodar de novo na mesma sala, inclusive para trocar de estilo.
 
 ```
-node tools/sala-gamer.js "Sala 07"          (com o servidor parado)
-node tools/sala-gamer.js "Sala 07" --nome="Sala Gamer"   (e renomeia)
-node tools/sala-gamer.js "Sala 07" --parede=+x         (escolhe a parede da TV; padrão: a oposta à porta)
+node tools/sala-gamer.js "Sala 07"                      (com o servidor parado; estilo minimalista)
+node tools/sala-gamer.js "Sala 07" --estilo=neon        (sala gamer com neon)
+node tools/sala-gamer.js "Sala 07" --nome="Sala Gamer"  (e renomeia)
+node tools/sala-gamer.js "Sala 07" --parede=+x          (escolhe a parede da TV; padrão: a oposta à porta)
 ```
 
-Ele acha a porta sozinho, faz backup em `data/backup-sala-gamer-…` e funciona com qualquer sala de pelo menos 7×7. Depois, para levar para o Render: `node tools/exportar-mundo.js` e `git push`.
+Estilos:
+- **minimalista** (padrão): paredes cinza-claro, parede de ripado de madeira com a TV (7×4 numa sala de 11), piso de madeira clara, teto modular com painéis de luz, **PC top com 3 monitores no meio da sala** numa bancada de madeira, duas caixas de som de torre, cadeira e tapetes cinza, frigobar, plantas e abajur.
+- **neon**: painéis escuros com neon, TV 9×4, duas estações de jogo, 3 fliperamas, frigobar, sofá, puffs e placas de neon "GAMER" e "GAME ON".
 
-Atenção: `gerar-escritorio.js` refaz o prédio inteiro e apaga a sala gamer; se rodar, rode o `sala-gamer.js` de novo depois. O `atualizar-predio.js` não desfaz a sala (só recoloca os painéis de ripado, que ficam escondidos atrás do forro).
+Ele acha a porta sozinho, faz backup em `data/backup-sala-gamer-…` e funciona com qualquer sala de pelo menos 7×7 (o que não couber numa sala pequena é pulado, com aviso). Depois, para levar para o Render: `node tools/exportar-mundo.js` e `git push`.
 
-Novidades usadas pela sala (também aparecem no inventário, **E**):
+Atenção: `gerar-escritorio.js` refaz o prédio inteiro e apaga a sala temática; se rodar, rode o `sala-gamer.js` de novo depois. O `atualizar-predio.js` não desfaz a sala (só recoloca os painéis de ripado, que ficam escondidos atrás do forro).
+
+Novidades no inventário (**E**), usadas pelas salas:
 - **Blocos de neon** (ids 54 a 60: rosa, ciano, roxo, verde, azul, laranja, vermelho). Brilham sozinhos, sem sombra por face. O servidor aceita blocos até o id 63 (`MAX_BLOCK_ID`), então sobram 3 ids.
-- **Decorações**: cadeira gamer, PC gamer (gabinete RGB), fliperama, coluna de LED RGB, placas de neon "GAMER" e "GAME ON", videogame e controle.
+- **Decorações**: PC torre, caixa de som de torre, cadeira gamer, PC gamer (gabinete RGB), fliperama, coluna de LED RGB, placas de neon "GAMER" e "GAME ON", videogame e controle.
 
 > Decoração nova precisa ser registrada em **dois lugares**: `DECOR` em `public/js/decor.js` e a lista `BUILTIN` em `server.js`. Sem o segundo, o servidor descarta os objetos.
 

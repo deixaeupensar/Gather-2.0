@@ -142,7 +142,9 @@ const BUILTIN = new Set(['mesa', 'mesa_escritorio', 'cadeira', 'cadeira_escritor
   'cafeteira', 'impressora', 'frigobar', 'microondas', 'extintor', 'lixeiras_reciclagem', 'luminaria_mesa', 'headset', 'livros', 'garrafa', 'garrafa_rosa', 'caneca_azul', 'caneca_laranja',
   'vaso_flores', 'vaso_flores_amarelas', 'cacto', 'costela_adao', 'suculenta', 'arvore_interna', 'lousa', 'alertas',
   // sala gamer
-  'cadeira_gamer', 'gabinete_gamer', 'arcade', 'torre_led', 'neon_gamer', 'neon_game_on', 'console_game', 'controle_game'].map(k => 'd:' + k));
+  'cadeira_gamer', 'gabinete_gamer', 'arcade', 'torre_led', 'neon_gamer', 'neon_game_on', 'console_game', 'controle_game',
+  // setup minimalista
+  'pc_torre', 'caixa_som'].map(k => 'd:' + k));
 const modelExists = id => BUILTIN.has(id) || models.some(m => m.id === id);
 objects = readJSON(OBJECTS_FILE, []).filter(o => modelExists(o.model));
 const kanban = new Kanban(DATA_DIR);
@@ -152,21 +154,6 @@ console.log(sn.enabled ? `ServiceNow: conectado a ${sn.cfg.instance} (${sn.cfg.g
 const ROOMS_FILE = path.join(DATA_DIR, 'rooms.json');
 let rooms = readJSON(ROOMS_FILE, []);
 const saveRooms = () => fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 1));
-// Donos fixos de sala (variável ROOM_OWNERS): reaplicados a cada subida do servidor. Serve para o dono não se perder quando o disco
-// é apagado (plano grátis do Render volta ao mundo-inicial, que não guarda donos) e mantém o e-mail fora do repositório.
-// Formato: {"Sala 01": {"email": "voce@empresa.com", "nome": "Seu Nome"}}  (a chave pode ser o nome ou o id da sala; "email" é o do login no jogo).
-// Só preenche sala SEM dono: quem já tomou posse por dentro do jogo continua dono.
-try {
-  const cfg = JSON.parse(process.env.ROOM_OWNERS || "{}"), fold = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  let applied = 0;
-  for (const [key, val] of Object.entries(cfg)) {
-    const r = rooms.find(rr => rr.id === key || fold(rr.name) === fold(key));
-    const email = String(typeof val === "string" ? val : (val && val.email) || "").trim().toLowerCase();
-    if (!r || r.owner || !email) continue;
-    r.owner = email; r.ownerName = String((val && val.nome) || email.split("@")[0]).slice(0, 24); applied++;
-  }
-  if (applied) { saveRooms(); console.log(`Donos de sala aplicados (ROOM_OWNERS): ${applied}`); }
-} catch { console.warn("ROOM_OWNERS inválido (esperado JSON como {\"Sala 01\": {\"email\": \"...\", \"nome\": \"...\"}}), ignorado"); }
 // ponto (pés do jogador + 1) dentro da caixa da sala
 const inRoom = (r, p) => { const x = Math.floor(p[0]), y = Math.floor(p[1] + 1), z = Math.floor(p[2]); return x >= r.min[0] && x <= r.max[0] && y >= r.min[1] && y <= r.max[1] && z >= r.min[2] && z <= r.max[2]; };
 // dono da sala: identificado pelo e-mail do login (ou pelo nome, se não tiver e-mail).

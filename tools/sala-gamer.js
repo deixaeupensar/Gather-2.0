@@ -1,9 +1,15 @@
-// Transforma uma sala do prédio numa sala "gamer": painéis escuros com neon, piso e teto escuros,
-// TV enorme na parede (a TV normal do jogo: botão direito compartilha a tela), PCs, fliperamas,
-// sofá e puffs. Tira a mobília que já estava na sala. Pode rodar de novo na mesma sala (refaz tudo).
+// Transforma uma sala do prédio num setup temático, com TV enorme na parede (a TV normal do jogo:
+// botão direito compartilha a tela). Tira a mobília que já estava na sala. Pode rodar de novo na mesma
+// sala (refaz tudo, inclusive trocando de estilo).
+//
+// Estilos:
+//   minimalista (padrão)  paredes cinza, parede de ripado de madeira com a TV, piso de madeira, PC top com
+//                         3 monitores no meio da sala, 2 caixas de som, frigobar, plantas e um abajur
+//   neon                  sala gamer: painéis escuros com neon, fliperamas, estações de jogo, sofá e puffs
 //
 // Uso (com o servidor PARADO):   node tools/sala-gamer.js "Sala 07"
-//   opções:  --parede=-z|+z|-x|+x   parede da TV (padrão: a oposta à porta)
+//   opções:  --estilo=minimalista|neon
+//            --parede=-z|+z|-x|+x   parede da TV (padrão: a oposta à porta)
 //            --nome="Sala Gamer"    renomeia a sala
 //            DATA_DIR=...           pasta de dados (padrão: data/)
 // Faz backup antes (data/backup-sala-gamer-...). Para desfazer, copie os arquivos do backup de volta.
@@ -21,15 +27,21 @@ const W = 256, H = 64, D = 256;
 const idx = (x, y, z) => x + W * (z + D * y);
 const TAG = 'sala-gamer';
 // ids dos blocos (public/js/blocks.js)
-const B = { air: 0, gray: 32, black: 33, pink: 54, cyan: 55, purple: 56, green: 57, blue: 58, orange: 59, red: 60 };
+const B = {
+  air: 0, lgray: 31, gray: 32, black: 33, oak: 47, ceiling: 50, led: 51, slats: 53,
+  pink: 54, cyan: 55, purple: 56,
+};
 // pegada [largura, profundidade] de cada modelo, antes de girar (public/js/decor.js)
 const FOOT = {
-  'd:mesa_escritorio_preta': [2, 1], 'd:monitor_duplo': [2, 1], 'd:sofa_grande': [3, 1], 'd:mesa_centro': [2, 1],
+  'd:mesa_escritorio_preta': [2, 1], 'd:mesa_escritorio_madeira': [2, 1], 'd:monitor_duplo': [2, 1],
+  'd:sofa_grande': [3, 1], 'd:mesa_centro': [2, 1], 'd:tapete_cinza': [2, 2],
   'd:neon_gamer': [4, 1], 'd:neon_game_on': [4, 1],
 };
 const foot = (model, extra) => (model === 'd:tv' ? [extra.w, 1] : FOOT[model] || [1, 1]);
 
-const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+// tira acentos para comparar nomes (a classe de caracteres combinantes é montada por código para não depender de escape)
+const COMBINING = new RegExp('[' + String.fromCharCode(0x300) + '-' + String.fromCharCode(0x36f) + ']', 'g');
+const norm = s => String(s).normalize('NFD').replace(COMBINING, '').toLowerCase().trim();
 const rotOf = (dx, dz) => ((Math.round(Math.atan2(dx, dz) / (Math.PI / 2)) % 4) + 4) % 4;
 const OPPOSITE = { '-z': '+z', '+z': '-z', '-x': '+x', '+x': '-x' };
 
@@ -45,7 +57,9 @@ function portInUse(port) {
 async function main() {
   const flags = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const i = a.indexOf('='); return i < 0 ? [a.slice(2), true] : [a.slice(2, i), a.slice(i + 1)]; }));
   const roomName = process.argv.slice(2).find(a => !a.startsWith('--'));
+  const style = flags.estilo || 'minimalista';
   if (!roomName) { console.error('Diga qual sala. Exemplo: node tools/sala-gamer.js "Sala 07"'); process.exit(1); }
+  if (style !== 'minimalista' && style !== 'neon') { console.error('--estilo deve ser minimalista ou neon'); process.exit(1); }
   if (await portInUse(PORT)) { console.error(`O servidor parece estar rodando na porta ${PORT}. Pare ele (Ctrl+C) e rode de novo.`); process.exit(1); }
 
   const worldFile = path.join(DATA, 'world.bin');
@@ -108,11 +122,11 @@ async function main() {
   const vec = (du, dv) => { const [ax, az] = at(0, 0), [bx, bz] = at(du, dv); return [bx - ax, bz - az]; };
   const FACE = { '+v': frame.front, '-v': (frame.front + 2) % 4, '+u': rotOf(...vec(1, 0)), '-u': rotOf(...vec(-1, 0)) };
   const mid = Math.floor(Wd / 2);
-  console.log(`Sala "${room.name}": ${x1 - x0 + 1}x${z1 - z0 + 1}x${y1 - y0 + 1}, porta no lado ${[...doorSides].join(' ')}, TV na parede ${tvSide} (${Wd} de largura, ${Dp} de fundo).`);
+  console.log(`Sala "${room.name}" (${style}): ${x1 - x0 + 1}x${z1 - z0 + 1}x${y1 - y0 + 1}, porta no lado ${[...doorSides].join(' ')}, TV na parede ${tvSide} (${Wd} de largura, ${Dp} de fundo).`);
 
   const put = (x, y, z, b) => { if (x >= 0 && z >= 0 && x < W && z < D && y >= 0 && y < H) world[idx(x, y, z)] = b; };
 
-  // ---------- tira a mobília antiga (menos portas) e uma sala gamer feita antes
+  // ---------- tira a mobília antiga (menos portas) e o que uma versão anterior desta ferramenta colocou
   const before = objects.length, removed = {};
   objects = objects.filter(o => {
     if (o.model === 'd:porta') return true;
@@ -121,37 +135,30 @@ async function main() {
     return !inside;
   });
   console.log(`Removi ${before - objects.length} objetos da sala:`, Object.entries(removed).map(([m, n]) => `${m.replace('d:', '')}×${n}`).join(', ') || '(nenhum)');
-  // o espaço da sala (menos o forro de ar em volta) começa vazio
+  // o espaço da sala começa vazio (inclui blocos de uma versão anterior)
   for (let y = y0; y <= y1; y++) for (let z = z0; z <= z1; z++) for (let x = x0; x <= x1; x++) put(x, y, z, B.air);
 
-  // ---------- piso e teto escuros com neon
   let blocks = 0;
-  for (let u = 0; u < Wd; u++) for (let v = 0; v < Dp; v++) {
-    const [x, z] = at(u, v);
-    const inner = u > 0 && u < Wd - 1 && v > 0 && v < Dp - 1;
-    // piso: concreto preto, com duas faixas de neon que apontam para a TV
-    put(x, FLOOR, z, inner && u === 3 ? B.cyan : inner && u === Wd - 4 ? B.pink : B.black); blocks++;
-    // teto: concreto preto com dois anéis de neon
-    const ring = Math.min(u, Wd - 1 - u, v, Dp - 1 - v);
-    put(x, CEIL, z, ring === 1 ? B.pink : ring === 3 ? B.cyan : B.black); blocks++;
-  }
-
-  // ---------- painéis: 1 bloco de concreto preto colado nas paredes (não mexe nas paredes, que são das salas vizinhas)
-  // rodapé de neon rosa, friso de neon ciano no alto e uma faixa roxa no meio; a porta fica livre
-  for (let u = 0; u < Wd; u++) for (let v = 0; v < Dp; v++) {
-    if (u > 0 && u < Wd - 1 && v > 0 && v < Dp - 1) continue;
-    const [x, z] = at(u, v);
-    for (let y = y0; y <= y1; y++) {
-      if (doorBlocked(x, y, z)) continue;
-      const b = y === y0 ? B.pink : y === y1 ? B.cyan : y === y0 + 2 ? B.purple : B.black;
-      put(x, y, z, b); blocks++;
+  // piso e teto: cada função recebe (u, v, inner) e devolve o bloco daquela célula da pegada da sala
+  const slab = (floorPick, ceilPick) => {
+    for (let u = 0; u < Wd; u++) for (let v = 0; v < Dp; v++) {
+      const [x, z] = at(u, v);
+      const inner = u > 0 && u < Wd - 1 && v > 0 && v < Dp - 1;
+      put(x, FLOOR, z, floorPick(u, v, inner)); put(x, CEIL, z, ceilPick(u, v, inner)); blocks += 2;
     }
-  }
+  };
+  // painéis: 1 bloco colado nas paredes (não mexe nas paredes, que são das salas vizinhas); a porta fica livre
+  const lining = pick => {
+    for (let u = 0; u < Wd; u++) for (let v = 0; v < Dp; v++) {
+      if (u > 0 && u < Wd - 1 && v > 0 && v < Dp - 1) continue;
+      const [x, z] = at(u, v);
+      for (let y = y0; y <= y1; y++) { if (doorBlocked(x, y, z)) continue; put(x, y, z, pick(u, v, y)); blocks++; }
+    }
+  };
 
   // ---------- objetos
-  const newObjs = [];
+  const newObjs = [], skipped = [];
   // coloca um modelo cobrindo as células locais [u1..u2] x [v1..v2], de frente para `facing` ('+v','-v','+u','-u')
-  const skipped = [];
   function item(model, [u1, u2], [v1, v2], y, facing, extra = {}) {
     // só dentro da área livre (entre os painéis); em salas pequenas o que não couber é pulado
     if (u1 < 1 || u2 > Wd - 2 || v1 < 1 || v2 > Dp - 2) { skipped.push(model.replace('d:', '')); return null; }
@@ -168,48 +175,80 @@ async function main() {
     return o;
   }
   const FL = y0, TOPD = y0 + 0.81, LAST = Dp - 2;
+  // TV enorme: entre os painéis, colada no painel da parede
+  let tvW = Math.min(Wd - 2, 16);
+  const tvH = Math.min(4, y1 - y0);
+  const bigTV = () => { const u = 1 + Math.floor((Wd - 2 - tvW) / 2); return item('d:tv', [u, u + tvW - 1], [1, 1], y0 + 1, '+v', { w: tvW, h: tvH }); };
 
-  // TV enorme: entre os painéis, colada no painel da parede (acima do aparador)
-  const tvW = Math.min(Wd - 2, 16), tvH = Math.min(4, y1 - y0);
-  const tvU = 1 + Math.floor((Wd - 2 - tvW) / 2);
-  item('d:tv', [tvU, tvU + tvW - 1], [1, 1], y0 + 1, '+v', { w: tvW, h: tvH });
-  // aparador com videogame embaixo da TV
-  item('d:mesa_escritorio_preta', [mid - 2, mid - 1], [1, 1], FL, '+v');
-  item('d:mesa_escritorio_preta', [mid, mid + 1], [1, 1], FL, '+v');
-  item('d:headset', [mid - 2, mid - 2], [1, 1], TOPD, '+v');
-  item('d:console_game', [mid - 1, mid - 1], [1, 1], TOPD, '+v');
-  item('d:controle_game', [mid, mid], [1, 1], TOPD, '+v');
-  item('d:lata_energetico', [mid + 1, mid + 1], [1, 1], TOPD, '+v');
-  // colunas de LED nos cantos da TV
-  item('d:torre_led', [1, 1], [1, 1], FL, '+v');
-  item('d:torre_led', [Wd - 2, Wd - 2], [1, 1], FL, '+v');
-  // sala de estar de frente para a TV
-  item('d:sofa_grande', [mid - 1, mid + 1], [LAST - 1, LAST - 1], FL, '-v');
-  item('d:mesa_centro', [mid - 1, mid], [LAST - 3, LAST - 3], FL, '+v');
-  item('d:pufe_roxo', [mid - 2, mid - 2], [LAST - 3, LAST - 3], FL, '-v');
-  item('d:pufe_azul', [mid + 1, mid + 1], [LAST - 3, LAST - 3], FL, '-v');
-  item('d:puff_saco', [mid - 3, mid - 3], [LAST - 1, LAST - 1], FL, '-v');
-  item('d:puff_saco_cinza', [mid + 3, mid + 3], [LAST - 1, LAST - 1], FL, '-v');
-  item('d:lata_energetico_branca', [mid, mid], [LAST - 3, LAST - 3], y0 + 0.4, '+v');
-  // estações de jogo na parede da esquerda: mesa + monitor duplo + cadeira gamer + PC
-  const stations = Math.max(0, Math.floor((Dp - 3) / 3));
-  for (let k = 0; k < stations; k++) {
-    const v = 2 + 3 * k;
-    item('d:mesa_escritorio_preta', [1, 1], [v, v + 1], FL, '+u');
-    item('d:monitor_duplo', [1, 1], [v, v + 1], TOPD, '+u');
-    item('d:cadeira_gamer', [2, 2], [v, v], FL, '-u');
-    item('d:gabinete_gamer', [1, 1], [v + 2, v + 2], FL, '+u');
-  }
-  // fliperamas e frigobar na parede da direita
-  const arcades = Math.min(3, Math.max(0, Dp - 6));
-  for (let k = 0; k < arcades; k++) item('d:arcade', [Wd - 2, Wd - 2], [2 + k, 2 + k], FL, '-u');
-  const fridgeV = Math.min(2 + arcades + 1, LAST - 2);
-  item('d:frigobar', [Wd - 2, Wd - 2], [fridgeV, fridgeV], FL, '-u');
-  item('d:lata_energetico', [Wd - 2, Wd - 2], [fridgeV, fridgeV], FL + 1.19, '-u');
-  // placas de neon por cima, nas duas paredes laterais
-  if (Dp >= 7) {
-    item('d:neon_gamer', [Wd - 2, Wd - 2], [2, 5], y0 + 3, '-u');
-    item('d:neon_game_on', [1, 1], [2, 5], y0 + 3, '+u');
+  if (style === 'minimalista') {
+    // piso de madeira clara; teto modular com painéis de luz espaçados
+    slab(() => B.oak, (u, v, inner) => (inner && (u - 2) % 3 === 0 && (v - 2) % 3 === 0 ? B.led : B.ceiling));
+    // paredes cinza-claro e, na parede da TV, ripado de madeira do chão ao teto
+    lining((u, v) => (v === 0 ? B.slats : B.lgray));
+    tvW = Math.max(3, Wd - 4); // 16:9 (7x4 numa sala de 11) e sobra ripado de madeira dos dois lados
+    bigTV();
+    // PC top no meio: bancada de madeira de 4 blocos, 3 monitores, torre na ponta, cadeira cinza atrás
+    const dv = Math.floor(Dp / 2) - 1;
+    item('d:tapete_cinza', [mid - 1, mid], [dv, dv + 1], FL, '+v');
+    item('d:tapete_cinza', [mid + 1, mid + 2], [dv, dv + 1], FL, '+v');
+    item('d:mesa_escritorio_madeira', [mid - 1, mid], [dv, dv], FL, '+v');
+    item('d:mesa_escritorio_madeira', [mid + 1, mid + 2], [dv, dv], FL, '+v');
+    for (const k of [-1, 0, 1]) item('d:monitor', [mid + k, mid + k], [dv, dv], TOPD, '+v');
+    item('d:pc_torre', [mid + 2, mid + 2], [dv, dv], TOPD, '+v');
+    item('d:cadeira_escritorio_cinza', [mid, mid], [dv + 1, dv + 1], FL, '-v');
+    // caixas de som de torre nos dois lados da bancada
+    item('d:caixa_som', [mid - 2, mid - 2], [dv, dv], FL, '+v');
+    item('d:caixa_som', [mid + 3, mid + 3], [dv, dv], FL, '+v');
+    // frigobar no canto da TV, com uma lata em cima; plantas e abajur para aquecer o cinza
+    item('d:frigobar', [Wd - 2, Wd - 2], [2, 2], FL, '-u');
+    item('d:lata_energetico_branca', [Wd - 2, Wd - 2], [2, 2], FL + 1.19, '-u');
+    item('d:planta', [1, 1], [1, 1], FL, '+v');
+    item('d:planta', [1, 1], [LAST - 1, LAST - 1], FL, '+v');
+    item('d:luminaria', [Wd - 2, Wd - 2], [LAST - 1, LAST - 1], FL, '+v');
+  } else {
+    // piso preto com duas faixas de neon que apontam para a TV; teto preto com dois anéis de neon
+    slab((u, v, inner) => (inner && u === 3 ? B.cyan : inner && u === Wd - 4 ? B.pink : B.black),
+      (u, v) => { const ring = Math.min(u, Wd - 1 - u, v, Dp - 1 - v); return ring === 1 ? B.pink : ring === 3 ? B.cyan : B.black; });
+    // painéis pretos com rodapé rosa, friso ciano no alto e faixa roxa no meio
+    lining((u, v, y) => (y === y0 ? B.pink : y === y1 ? B.cyan : y === y0 + 2 ? B.purple : B.black));
+    bigTV();
+    // aparador com videogame embaixo da TV
+    item('d:mesa_escritorio_preta', [mid - 2, mid - 1], [1, 1], FL, '+v');
+    item('d:mesa_escritorio_preta', [mid, mid + 1], [1, 1], FL, '+v');
+    item('d:headset', [mid - 2, mid - 2], [1, 1], TOPD, '+v');
+    item('d:console_game', [mid - 1, mid - 1], [1, 1], TOPD, '+v');
+    item('d:controle_game', [mid, mid], [1, 1], TOPD, '+v');
+    item('d:lata_energetico', [mid + 1, mid + 1], [1, 1], TOPD, '+v');
+    item('d:torre_led', [1, 1], [1, 1], FL, '+v');
+    item('d:torre_led', [Wd - 2, Wd - 2], [1, 1], FL, '+v');
+    // sala de estar de frente para a TV
+    item('d:sofa_grande', [mid - 1, mid + 1], [LAST - 1, LAST - 1], FL, '-v');
+    item('d:mesa_centro', [mid - 1, mid], [LAST - 3, LAST - 3], FL, '+v');
+    item('d:pufe_roxo', [mid - 2, mid - 2], [LAST - 3, LAST - 3], FL, '-v');
+    item('d:pufe_azul', [mid + 1, mid + 1], [LAST - 3, LAST - 3], FL, '-v');
+    item('d:puff_saco', [mid - 3, mid - 3], [LAST - 1, LAST - 1], FL, '-v');
+    item('d:puff_saco_cinza', [mid + 3, mid + 3], [LAST - 1, LAST - 1], FL, '-v');
+    item('d:lata_energetico_branca', [mid, mid], [LAST - 3, LAST - 3], y0 + 0.4, '+v');
+    // estações de jogo na parede da esquerda
+    const stations = Math.max(0, Math.floor((Dp - 3) / 3));
+    for (let k = 0; k < stations; k++) {
+      const v = 2 + 3 * k;
+      item('d:mesa_escritorio_preta', [1, 1], [v, v + 1], FL, '+u');
+      item('d:monitor_duplo', [1, 1], [v, v + 1], TOPD, '+u');
+      item('d:cadeira_gamer', [2, 2], [v, v], FL, '-u');
+      item('d:gabinete_gamer', [1, 1], [v + 2, v + 2], FL, '+u');
+    }
+    // fliperamas e frigobar na parede da direita
+    const arcades = Math.min(3, Math.max(0, Dp - 6));
+    for (let k = 0; k < arcades; k++) item('d:arcade', [Wd - 2, Wd - 2], [2 + k, 2 + k], FL, '-u');
+    const fridgeV = Math.min(2 + arcades + 1, LAST - 2);
+    item('d:frigobar', [Wd - 2, Wd - 2], [fridgeV, fridgeV], FL, '-u');
+    item('d:lata_energetico', [Wd - 2, Wd - 2], [fridgeV, fridgeV], FL + 1.19, '-u');
+    // placas de neon por cima, nas duas paredes laterais
+    if (Dp >= 7) {
+      item('d:neon_gamer', [Wd - 2, Wd - 2], [2, 5], y0 + 3, '-u');
+      item('d:neon_game_on', [1, 1], [2, 5], y0 + 3, '+u');
+    }
   }
   objects.push(...newObjs);
 
@@ -218,7 +257,7 @@ async function main() {
   fs.writeFileSync(worldFile, world);
   fs.writeFileSync(path.join(DATA, 'objects.json'), JSON.stringify(objects));
   fs.writeFileSync(path.join(DATA, 'rooms.json'), JSON.stringify(rooms, null, 1));
-  console.log(`Sala gamer pronta: ${blocks} blocos, ${newObjs.length} objetos novos (TV de ${tvW}x${tvH}).`);
+  console.log(`Sala pronta (${style}): ${blocks} blocos, ${newObjs.length} objetos novos (TV de ${tvW}x${tvH}).`);
   if (skipped.length) console.log('Não coube (sala pequena):', skipped.join(', '));
   console.log('Agora inicie o servidor: node server.js');
 }
