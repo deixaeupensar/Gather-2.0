@@ -152,6 +152,21 @@ console.log(sn.enabled ? `ServiceNow: conectado a ${sn.cfg.instance} (${sn.cfg.g
 const ROOMS_FILE = path.join(DATA_DIR, 'rooms.json');
 let rooms = readJSON(ROOMS_FILE, []);
 const saveRooms = () => fs.writeFileSync(ROOMS_FILE, JSON.stringify(rooms, null, 1));
+// Donos fixos de sala (variável ROOM_OWNERS): reaplicados a cada subida do servidor. Serve para o dono não se perder quando o disco
+// é apagado (plano grátis do Render volta ao mundo-inicial, que não guarda donos) e mantém o e-mail fora do repositório.
+// Formato: {"Sala 01": {"email": "voce@empresa.com", "nome": "Seu Nome"}}  (a chave pode ser o nome ou o id da sala; "email" é o do login no jogo).
+// Só preenche sala SEM dono: quem já tomou posse por dentro do jogo continua dono.
+try {
+  const cfg = JSON.parse(process.env.ROOM_OWNERS || "{}"), fold = t => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  let applied = 0;
+  for (const [key, val] of Object.entries(cfg)) {
+    const r = rooms.find(rr => rr.id === key || fold(rr.name) === fold(key));
+    const email = String(typeof val === "string" ? val : (val && val.email) || "").trim().toLowerCase();
+    if (!r || r.owner || !email) continue;
+    r.owner = email; r.ownerName = String((val && val.nome) || email.split("@")[0]).slice(0, 24); applied++;
+  }
+  if (applied) { saveRooms(); console.log(`Donos de sala aplicados (ROOM_OWNERS): ${applied}`); }
+} catch { console.warn("ROOM_OWNERS inválido (esperado JSON como {\"Sala 01\": {\"email\": \"...\", \"nome\": \"...\"}}), ignorado"); }
 // ponto (pés do jogador + 1) dentro da caixa da sala
 const inRoom = (r, p) => { const x = Math.floor(p[0]), y = Math.floor(p[1] + 1), z = Math.floor(p[2]); return x >= r.min[0] && x <= r.max[0] && y >= r.min[1] && y <= r.max[1] && z >= r.min[2] && z <= r.max[2]; };
 // dono da sala: identificado pelo e-mail do login (ou pelo nome, se não tiver e-mail).

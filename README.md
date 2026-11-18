@@ -142,8 +142,21 @@ O microfone passa por supressão de ruído do navegador, filtros (corta zumbido 
 | `HTTP=1` | desligado | serve HTTP puro, para usar atrás de um proxy/túnel que já entrega HTTPS |
 | `CERT_FILE` / `KEY_FILE` | — | usar um certificado de verdade (PEM) em vez do autoassinado |
 | `ICE_SERVERS` | STUN do Google | JSON com STUN/TURN para o WebRTC, ex.: `[{"urls":"turn:meu-servidor:3478","username":"u","credential":"s"}]` |
+| `ROOM_OWNERS` | — | donos fixos de sala, reaplicados a cada subida (veja "Dono fixo da sala"). Ex.: `{"Sala 01": {"email": "voce@empresa.com", "nome": "Seu Nome"}}` |
 
 Exemplo no PowerShell: `$env:PORT=8443; node server.js`
+
+### Dono fixo da sala (`ROOM_OWNERS`)
+
+Tomar posse de uma sala (**K** dentro dela) é gravado na hora em `data/rooms.json` e sobrevive a reiniciar o servidor, mesmo que ele caia. Mas hospedagens com disco temporário (como o plano grátis do Render) voltam ao `mundo-inicial/` a cada reinício, e o `mundo-inicial/` não guarda donos (o dono é identificado pelo e-mail, que não deve ir para o repositório). Para o dono não se perder, defina no servidor a variável `ROOM_OWNERS`:
+
+```
+ROOM_OWNERS={"Sala 01": {"email": "voce@empresa.com", "nome": "Seu Nome"}}
+```
+
+- `email` é o e-mail que a pessoa usa para entrar no jogo; `nome` é o que aparece em "é de …". A chave pode ser o nome ou o id da sala (sem diferenciar maiúsculas e acentos). Pode ter várias salas no mesmo JSON.
+- É reaplicado a cada subida, só em sala **sem dono**: quem tomou posse dentro do jogo continua dono. Se o dono "liberar" a sala (K de novo), ela volta a ser dele na próxima subida.
+- JSON inválido só gera um aviso no log; o servidor sobe do mesmo jeito.
 
 ## Arquivos
 

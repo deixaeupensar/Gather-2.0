@@ -29,7 +29,7 @@ const FOOT = {
 };
 const foot = (model, extra) => (model === 'd:tv' ? [extra.w, 1] : FOOT[model] || [1, 1]);
 
-const norm = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const norm = s => String(s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 const rotOf = (dx, dz) => ((Math.round(Math.atan2(dx, dz) / (Math.PI / 2)) % 4) + 4) % 4;
 const OPPOSITE = { '-z': '+z', '+z': '-z', '-x': '+x', '+x': '-x' };
 
