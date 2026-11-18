@@ -173,12 +173,13 @@ Transforma uma sala do prédio numa sala temática, com uma **TV enorme na pared
 ```
 node tools/sala-gamer.js "Sala 07"                      (com o servidor parado; estilo minimalista)
 node tools/sala-gamer.js "Sala 07" --estilo=neon        (sala gamer com neon)
+node tools/sala-gamer.js "Sala 07" --neon=laranja       (cor da fita de neon do teto: ciano, rosa, laranja ou branca)
 node tools/sala-gamer.js "Sala 07" --nome="Sala Gamer"  (e renomeia)
 node tools/sala-gamer.js "Sala 07" --parede=+x          (escolhe a parede da TV; padrão: a oposta à porta)
 ```
 
 Estilos:
-- **minimalista** (padrão): paredes cinza-claro, parede de ripado de madeira com a TV (7×4 numa sala de 11), piso de madeira clara, teto modular com painéis de luz, **PC top com 3 monitores no meio da sala** numa bancada de madeira, duas caixas de som de torre, cadeira e tapetes cinza, frigobar, plantas e abajur.
+- **minimalista** (padrão): paredes cinza-claro, parede de ripado de madeira com a TV (7×4 numa sala de 11), piso de madeira clara, teto modular com painéis de luz, **PC top com 3 monitores no meio da sala** numa bancada de madeira **virada para a porta** (quem senta fica de frente para quem entra), duas caixas de som de torre, cadeira e tapetes cinza, frigobar, plantas, abajur e uma **fita de neon na borda do teto** (padrão ciano; troque com `--neon=`).
 - **neon**: painéis escuros com neon, TV 9×4, duas estações de jogo, 3 fliperamas, frigobar, sofá, puffs e placas de neon "GAMER" e "GAME ON".
 
 Ele acha a porta sozinho, faz backup em `data/backup-sala-gamer-…` e funciona com qualquer sala de pelo menos 7×7 (o que não couber numa sala pequena é pulado, com aviso). Depois, para levar para o Render: `node tools/exportar-mundo.js` e `git push`.
@@ -187,7 +188,7 @@ Atenção: `gerar-escritorio.js` refaz o prédio inteiro e apaga a sala temátic
 
 Novidades no inventário (**E**), usadas pelas salas:
 - **Blocos de neon** (ids 54 a 60: rosa, ciano, roxo, verde, azul, laranja, vermelho). Brilham sozinhos, sem sombra por face. O servidor aceita blocos até o id 63 (`MAX_BLOCK_ID`), então sobram 3 ids.
-- **Decorações**: PC torre, caixa de som de torre, cadeira gamer, PC gamer (gabinete RGB), fliperama, coluna de LED RGB, placas de neon "GAMER" e "GAME ON", videogame e controle.
+- **Decorações**: fitas de neon (ciano, rosa, laranja e branco quente), PC torre, caixa de som de torre, cadeira gamer, PC gamer (gabinete RGB), fliperama, coluna de LED RGB, placas de neon "GAMER" e "GAME ON", videogame e controle.
 
 > Decoração nova precisa ser registrada em **dois lugares**: `DECOR` em `public/js/decor.js` e a lista `BUILTIN` em `server.js`. Sem o segundo, o servidor descarta os objetos.
 

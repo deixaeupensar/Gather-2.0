@@ -144,7 +144,9 @@ const BUILTIN = new Set(['mesa', 'mesa_escritorio', 'cadeira', 'cadeira_escritor
   // sala gamer
   'cadeira_gamer', 'gabinete_gamer', 'arcade', 'torre_led', 'neon_gamer', 'neon_game_on', 'console_game', 'controle_game',
   // setup minimalista
-  'pc_torre', 'caixa_som'].map(k => 'd:' + k));
+  'pc_torre', 'caixa_som',
+  // fitas de neon
+  'fita_neon_ciano', 'fita_neon_rosa', 'fita_neon_laranja', 'fita_neon_branca'].map(k => 'd:' + k));
 const modelExists = id => BUILTIN.has(id) || models.some(m => m.id === id);
 objects = readJSON(OBJECTS_FILE, []).filter(o => modelExists(o.model));
 const kanban = new Kanban(DATA_DIR);

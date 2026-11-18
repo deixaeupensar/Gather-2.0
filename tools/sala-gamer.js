@@ -4,11 +4,13 @@
 //
 // Estilos:
 //   minimalista (padrão)  paredes cinza, parede de ripado de madeira com a TV, piso de madeira, PC top com
-//                         3 monitores no meio da sala, 2 caixas de som, frigobar, plantas e um abajur
+//                         3 monitores no meio da sala (a mesa fica virada para a porta), 2 caixas de som,
+//                         frigobar, plantas, abajur e uma fita de neon na borda do teto
 //   neon                  sala gamer: painéis escuros com neon, fliperamas, estações de jogo, sofá e puffs
 //
 // Uso (com o servidor PARADO):   node tools/sala-gamer.js "Sala 07"
 //   opções:  --estilo=minimalista|neon
+//            --neon=ciano|rosa|laranja|branca   cor da fita de neon do teto (estilo minimalista; padrão: ciano)
 //            --parede=-z|+z|-x|+x   parede da TV (padrão: a oposta à porta)
 //            --nome="Sala Gamer"    renomeia a sala
 //            DATA_DIR=...           pasta de dados (padrão: data/)
@@ -58,6 +60,8 @@ async function main() {
   const flags = Object.fromEntries(process.argv.slice(2).filter(a => a.startsWith('--')).map(a => { const i = a.indexOf('='); return i < 0 ? [a.slice(2), true] : [a.slice(2, i), a.slice(i + 1)]; }));
   const roomName = process.argv.slice(2).find(a => !a.startsWith('--'));
   const style = flags.estilo || 'minimalista';
+  const neonColor = flags.neon || 'ciano';
+  if (!['ciano', 'rosa', 'laranja', 'branca'].includes(neonColor)) { console.error('--neon deve ser ciano, rosa, laranja ou branca'); process.exit(1); }
   if (!roomName) { console.error('Diga qual sala. Exemplo: node tools/sala-gamer.js "Sala 07"'); process.exit(1); }
   if (style !== 'minimalista' && style !== 'neon') { console.error('--estilo deve ser minimalista ou neon'); process.exit(1); }
   if (await portInUse(PORT)) { console.error(`O servidor parece estar rodando na porta ${PORT}. Pare ele (Ctrl+C) e rode de novo.`); process.exit(1); }
@@ -187,24 +191,28 @@ async function main() {
     lining((u, v) => (v === 0 ? B.slats : B.lgray));
     tvW = Math.max(3, Wd - 4); // 16:9 (7x4 numa sala de 11) e sobra ripado de madeira dos dois lados
     bigTV();
-    // PC top no meio: bancada de madeira de 4 blocos, 3 monitores, torre na ponta, cadeira cinza atrás
-    const dv = Math.floor(Dp / 2) - 1;
-    item('d:tapete_cinza', [mid - 1, mid], [dv, dv + 1], FL, '+v');
-    item('d:tapete_cinza', [mid + 1, mid + 2], [dv, dv + 1], FL, '+v');
-    item('d:mesa_escritorio_madeira', [mid - 1, mid], [dv, dv], FL, '+v');
-    item('d:mesa_escritorio_madeira', [mid + 1, mid + 2], [dv, dv], FL, '+v');
-    for (const k of [-1, 0, 1]) item('d:monitor', [mid + k, mid + k], [dv, dv], TOPD, '+v');
-    item('d:pc_torre', [mid + 2, mid + 2], [dv, dv], TOPD, '+v');
-    item('d:cadeira_escritorio_cinza', [mid, mid], [dv + 1, dv + 1], FL, '-v');
-    // caixas de som de torre nos dois lados da bancada
-    item('d:caixa_som', [mid - 2, mid - 2], [dv, dv], FL, '+v');
-    item('d:caixa_som', [mid + 3, mid + 3], [dv, dv], FL, '+v');
+    // PC top no meio, virado para a porta: quem senta fica de frente para quem entra (e de costas para a TV)
+    const dv = Math.floor(Dp / 2); // fileira da bancada
+    item('d:tapete_cinza', [mid - 1, mid], [dv - 1, dv], FL, '-v');
+    item('d:tapete_cinza', [mid + 1, mid + 2], [dv - 1, dv], FL, '-v');
+    item('d:mesa_escritorio_madeira', [mid - 1, mid], [dv, dv], FL, '-v');
+    item('d:mesa_escritorio_madeira', [mid + 1, mid + 2], [dv, dv], FL, '-v');
+    for (const k of [-1, 0, 1]) item('d:monitor', [mid + k, mid + k], [dv, dv], TOPD, '-v');
+    item('d:pc_torre', [mid + 2, mid + 2], [dv, dv], TOPD, '-v');
+    item('d:cadeira_escritorio_cinza', [mid, mid], [dv - 1, dv - 1], FL, '+v');
+    // caixas de som de torre nos dois lados da bancada, viradas para quem senta
+    item('d:caixa_som', [mid - 2, mid - 2], [dv, dv], FL, '-v');
+    item('d:caixa_som', [mid + 3, mid + 3], [dv, dv], FL, '-v');
     // frigobar no canto da TV, com uma lata em cima; plantas e abajur para aquecer o cinza
     item('d:frigobar', [Wd - 2, Wd - 2], [2, 2], FL, '-u');
     item('d:lata_energetico_branca', [Wd - 2, Wd - 2], [2, 2], FL + 1.19, '-u');
     item('d:planta', [1, 1], [1, 1], FL, '+v');
     item('d:planta', [1, 1], [LAST - 1, LAST - 1], FL, '+v');
     item('d:luminaria', [Wd - 2, Wd - 2], [LAST - 1, LAST - 1], FL, '+v');
+    // fita de neon na borda do teto, nas quatro paredes (uma faixa por bloco de parede, colada no alto)
+    const tape = 'd:fita_neon_' + neonColor;
+    for (let u = 1; u <= Wd - 2; u++) { item(tape, [u, u], [1, 1], y1, '+v'); item(tape, [u, u], [LAST, LAST], y1, '-v'); }
+    for (let v = 1; v <= LAST; v++) { item(tape, [1, 1], [v, v], y1, '+u'); item(tape, [Wd - 2, Wd - 2], [v, v], y1, '-u'); }
   } else {
     // piso preto com duas faixas de neon que apontam para a TV; teto preto com dois anéis de neon
     slab((u, v, inner) => (inner && u === 3 ? B.cyan : inner && u === Wd - 4 ? B.pink : B.black),

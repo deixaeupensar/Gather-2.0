@@ -311,6 +311,8 @@ function caixaSom() {
     [7.6, 3, 12.4, 0.8, 0.5, 0.3, '#ffffff', 1]];
 }
 
+// fita de neon na borda do teto: faixa fina e brilhante colada na parede, 1 bloco de largura (a ferramenta sala-gamer.js usa)
+function neonTape(color) { return [[0, 14, 0, 16, 2, 2.5, color, 1]]; }
 export const DECOR = {
   // ---------- móveis
   mesa: { name: 'Mesa de madeira', icon: '🪵', cat: 'deco', size: [2, 0.81, 1], boxes: [[0, 11, 0, 32, 2, 16, WOOD], ...legs4(32, 16, 11, WOOD_D)] },
@@ -370,6 +372,10 @@ export const DECOR = {
   // setup minimalista
   pc_torre: { name: 'PC torre (top de linha)', icon: '🖥️', cat: 'deco', size: [1, 0.95, 1], boxes: pcTorre() },
   caixa_som: { name: 'Caixa de som (torre)', icon: '🔊', cat: 'deco', size: [1, 1.4, 1], boxes: caixaSom() },
+  fita_neon_ciano: { name: 'Fita de neon (ciano)', icon: '➖', cat: 'deco', size: [1, 1, 0.125], wall: true, boxes: neonTape('#14e8ff') },
+  fita_neon_rosa: { name: 'Fita de neon (rosa)', icon: '➖', cat: 'deco', size: [1, 1, 0.125], wall: true, boxes: neonTape('#ff2bd6') },
+  fita_neon_laranja: { name: 'Fita de neon (laranja)', icon: '➖', cat: 'deco', size: [1, 1, 0.125], wall: true, boxes: neonTape('#ff8a1f') },
+  fita_neon_branca: { name: 'Fita de neon (branco quente)', icon: '➖', cat: 'deco', size: [1, 1, 0.125], wall: true, boxes: neonTape('#fff1d6') },
   tv: { name: 'Tela (TV) para compartilhar', icon: '📺', cat: 'deco', size: [4, 2, 0.125], wall: true, tv: true, boxes: [] },
   lousa: { name: 'Quadro branco interativo (desenhar)', icon: '✏️', cat: 'deco', size: [3, 2, 0.125], wall: true, lousa: true, boxes: [] },
   alertas: { name: 'Painel de alertas (chamados)', icon: '🚨', cat: 'deco', size: [3, 2, 0.125], wall: true, kanban: 'alertas', boxes: [] },
